@@ -1,5 +1,6 @@
-from elemento import Elemento
-class Obstaculo:
+from Elemento import Elemento
+
+class Obstaculo (Elemento):
     def __init__(self, posicao):
-        self.nome = "Obstáculo"
-        self.posicao = posicao
+        super().__init__("Obstáculo", posicao)
+        self.solido=True
