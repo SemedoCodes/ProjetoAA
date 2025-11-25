@@ -8,9 +8,6 @@ class Ambiente:
         self.altura = altura
         self.elementos = elementos
 
-    def remover_elemento(self, elemento: Elemento):
-        self.elementos.remove(elemento)
-
     def todos_elementos_posicao(self, pos: Posicao):
         elementosPosicao: List[Elemento] = []
         for e in self.elementos:
@@ -19,5 +16,12 @@ class Ambiente:
         return elementosPosicao
 
     def __str__(self):
-        return (f"[O ambiente tem {self.largura} de largura, {self.altura} de altura"
-                f" e tem os seguintes elementos: {self.elementos}]")
+        grelha = [[' ' for _ in range(self.largura)] for _ in range(self.altura)]
+
+        for e in self.elementos:
+            x, y = e.posicao.x, e.posicao.y
+
+            if 0 <= x < self.largura and 0 <= y < self.altura:
+                grelha[y][x] = e.simbolo
+
+        return "\n".join(["".join(linha) for linha in grelha])
