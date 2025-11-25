@@ -11,9 +11,9 @@ class Acao:
         self.parametros = parametros if parametros is not None else {}
 
     @staticmethod
-    def mover(dx, dy):
+    def mover(dx: int, dy: int):
         return Acao(TipoAcao.MOVER, {'dx': dx, 'dy': dy})
 
     @staticmethod
-    def comunicar(mensagem):
+    def comunicar(mensagem: str):
         return Acao(TipoAcao.COMUNICAR, {'msg': mensagem})
