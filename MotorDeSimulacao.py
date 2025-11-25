@@ -64,26 +64,29 @@ class MotorDeSimulacao:
 
         while not ganhou and self.passo_atual < self.max_passos:
             self.passo_atual += 1
-            # meter agentes a observar e a decidir ações
+            # TODO: meter agentes a observar e a decidir ações
 
             # meter agente a agir
+            for a in self.agentes:
+                # TODO: incluir ação
+                #a.agir(, a)
 
-            # da print
-            print(self.ambiente)
-            time.sleep(self.tempo_espera)
+                # atualizar a grelha
+                self.ambiente.atualizacao()
+                print(self.ambiente)
+                time.sleep(self.tempo_espera)
 
-            # verificar se ganhou
-            if self.se_ganhou() == True:
-                print("Ganhou!!")
+                # verificar se ganhou
+                if self.se_ganhou() == True:
+                    print("Ganhou!!")
                 return
-
 
         if not ganhou:
             print("\n Perdeu: número máximo de passos atingidos.")
             return
 
     def se_ganhou(self):
-        # falta adicionar para saída do labirinto
+        # TODO: adicionar a saída do labirinto
         for e in self.ambiente.elementos:
             if isinstance(e, Farol):
                 farol = e
