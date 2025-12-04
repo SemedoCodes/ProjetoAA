@@ -19,7 +19,6 @@ class MotorDeSimulacao:
         self.passo_atual = 0
         self.max_passos = 5
         self.tempo_espera = 0.5 # segundos entre passos
-        self.politica = Politica()
 
     def cria(self, nome_do_ficheiro: str):
         self.agentes = []
@@ -70,16 +69,16 @@ class MotorDeSimulacao:
         while not ganhou and self.passo_atual < self.max_passos:
             self.passo_atual += 1
 
-            # TODO: meter agentes a observar e a decidir ações
-
             # meter agente a agir
             for a in self.agentes:
                 obs = self.ambiente.observacaoPara(a)
-                acao = a.age(obs)
+                a.observacao(obs)
+                acao = a.age()
 
                 # aprender
                 recompensa = self.ambiente.agir(acao, a)
-                a.avaliacao_estado_atual(recompensa)
+
+                # TODO: metodo para adicionar a recompensa
 
                 # atualizar a grelha
                 self.ambiente.atualizacao()

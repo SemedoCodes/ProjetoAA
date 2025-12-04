@@ -25,7 +25,8 @@ class PoliticaFixa(Politica):
         """
         Consulta as regras com base no que o agente viu.
         """
-        if obs.tem_vetor():
+        # TODO: IMPPLEMENTAR REGRAS PARA O LABIRINTO
+        if obs.vetor_farol() is not None:
             dx_total, dy_total = obs.vetor_alvo
 
             # se ambos forem 0, estamos em cima do farol

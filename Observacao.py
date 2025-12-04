@@ -13,7 +13,7 @@ class Observacao:
         self.posicoes_risco = posicoes_risco if posicoes_risco else []
 
     def tem_vetor(self) -> bool:
-        return self.vetor_alvo is not None
+        return self.vetor_farol is not None
 
     def ver_direcao(self, direcao: str) -> str:
         return self.vizinhanca.get(direcao, "Desconhecido")
