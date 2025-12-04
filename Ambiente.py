@@ -51,10 +51,32 @@ class Ambiente:
             agente.posicao = nova_pos
         return
 
-    def observacaoPara(self, agente: Agente):
-        return #Observaca
+    def observacaoPara(self, agente: Agente) -> Observacao:
+        # FAROL
+        pos_farol = None
+        for elem in self.elementos:
+            if isinstance(elem, Farol):
+                pos_farol = elem.posicao
+                break
+
+        vetor = None
+        if pos_farol:
+            dx = pos_farol.x - agente.posicao.x
+            dy = pos_farol.y - agente.posicao.y
+            vetor = (dx, dy)
+
+        # LABIRINTO
+        # TODO: observacaoPara Labirinto
+        return Observacao(
+            posicao_agente=agente.posicao,
+            vetor_alvo=vetor,  # Usado no Farol
+            # vizinhanca=vizinhanca,  # Usado no Labirinto
+            # celulas_risco=self.celulas_risco
+        )
 
     def atualizacao(self):
+        for elem in self.elementos:
+            elem.update(self)
         return
 
     def __str__(self):

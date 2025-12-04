@@ -1,4 +1,5 @@
 from Politica import Politica
+from Acao import Acao, TipoAcao
 from typing import Dict, Any
 
 class PoliticaFixa(Politica):
@@ -19,7 +20,7 @@ class PoliticaFixa(Politica):
 
         }
 
-    def selecionar_acao(self, observacao: Dict[str, Any]) -> Any:
+    def selecionar_acao(self, obs) -> Acao:
         """
         Consulta as regras com base no que o agente viu.
         """
