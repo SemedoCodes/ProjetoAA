@@ -10,6 +10,8 @@ from Parede import Parede
 from Obstaculo import Obstaculo
 from Farol import Farol
 from PoliticaFixa import PoliticaFixa
+from SensorBussola import SensorBussola
+from AgenteSimples import AgenteSimples
 
 class MotorDeSimulacao:
     def __init__(self):
@@ -17,7 +19,7 @@ class MotorDeSimulacao:
         self.ambiente: Ambiente = None
 
         self.passo_atual = 0
-        self.max_passos = 5
+        self.max_passos = 15
         self.tempo_espera = 0.5 # segundos entre passos
 
     def cria(self, nome_do_ficheiro: str):
@@ -47,7 +49,8 @@ class MotorDeSimulacao:
                     farol = Farol(pos)
                     elementos.append(farol)
                 if e == 'A':
-                    agente = Agente(100, pos)
+                    agente = AgenteSimples(1, pos)
+                    agente.instala(SensorBussola())
                     agente.definir_politica(PoliticaFixa())
                     elementos.append(agente)
                     self.agentes.append(agente)
