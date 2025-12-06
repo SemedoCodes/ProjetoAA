@@ -1,9 +1,15 @@
 from abc import ABC, abstractmethod
 from typing import Any
-from Sensor import Sensor
-from Agente import Agente
+import Sensor
+import Agente
+import Posicao
 
 class Agente(ABC):
+
+    def __init__ (self, passos_max: int, posicao: Posicao, nome: str):
+        self.nome = nome
+        self.posicao = posicao
+        self.passo_max = passos_max
 
     def cria(self, nome_do_ficheiro: str):
 
