@@ -4,7 +4,7 @@ class Posicao:
         self.y = y
 
     # Comparar duas posições
-    def posicao_igual (self, p):
+    def __eq__(self, p):
         if isinstance(p, Posicao):
             return self.x == p.x and self.y == p.y
         return False

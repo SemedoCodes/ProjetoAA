@@ -3,11 +3,13 @@ from typing import List
 from Ambiente import Ambiente
 from Agente import Agente
 from Acao import Acao, TipoAcao
+from Politica import Politica
 from Posicao import Posicao
 from Elemento import Elemento
 from Parede import Parede
 from Obstaculo import Obstaculo
 from Farol import Farol
+from PoliticaFixa import PoliticaFixa
 
 class MotorDeSimulacao:
     def __init__(self):
@@ -46,7 +48,9 @@ class MotorDeSimulacao:
                     elementos.append(farol)
                 if e == 'A':
                     agente = Agente(100, pos)
+                    agente.definir_politica(PoliticaFixa())
                     elementos.append(agente)
+                    self.agentes.append(agente)
                 if e == 'O':
                     obstaculo = Obstaculo(pos)
                     elementos.append(obstaculo)
@@ -64,12 +68,17 @@ class MotorDeSimulacao:
 
         while not ganhou and self.passo_atual < self.max_passos:
             self.passo_atual += 1
-            # TODO: meter agentes a observar e a decidir ações
 
             # meter agente a agir
             for a in self.agentes:
-                # TODO: incluir ação
-                #a.agir(, a)
+                obs = self.ambiente.observacaoPara(a)
+                a.observacao(obs)
+                acao = a.age()
+
+                # aprender
+                recompensa = self.ambiente.agir(acao, a)
+
+                # TODO: metodo para adicionar a recompensa
 
                 # atualizar a grelha
                 self.ambiente.atualizacao()
@@ -79,11 +88,10 @@ class MotorDeSimulacao:
                 # verificar se ganhou
                 if self.se_ganhou() == True:
                     print("Ganhou!!")
-                return
+                    return
 
         if not ganhou:
             print("\n Perdeu: número máximo de passos atingidos.")
-            return
 
     def se_ganhou(self):
         # TODO: adicionar a saída do labirinto
@@ -93,6 +101,6 @@ class MotorDeSimulacao:
                 break
 
         for a in self.agentes:
-            if a.posicao.posicao_igual(farol.posicao):
+            if a.posicao == farol.posicao:
                 return True
         return False

@@ -7,5 +7,9 @@ class Elemento:
         self.simbolo = simbolo
         self.solido = solido
 
+    # elementos móveis vão reescrever este método
+    def update(self, ambiente):
+        pass
+
     def __str__(self):
         return f"[{self.nome}] em {self.posicao}"
