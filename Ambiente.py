@@ -3,7 +3,7 @@ from typing import List
 from Posicao import Posicao
 from Acao import Acao, TipoAcao
 from Agente import Agente
-from Observacao import Observacao
+
 from Farol import Farol
 from SensorBussola import SensorBussola
 
