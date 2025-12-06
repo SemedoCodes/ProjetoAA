@@ -6,10 +6,6 @@ import Posicao
 
 class Agente(ABC):
 
-    def __init__ (self, passos_max: int, posicao: Posicao, nome: str):
-        self.nome = nome
-        self.posicao = posicao
-        self.passo_max = passos_max
 
     def cria(self, nome_do_ficheiro: str):
 
