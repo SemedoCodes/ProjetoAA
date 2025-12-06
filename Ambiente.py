@@ -3,7 +3,7 @@ from typing import List
 from Posicao import Posicao
 from Acao import Acao, TipoAcao
 from Agente import Agente
-
+from Observacao import Observacao
 from Farol import Farol
 from SensorBussola import SensorBussola
 
@@ -84,7 +84,8 @@ class Ambiente:
 
         for sensor in agente.sensores:
             if isinstance(sensor, SensorBussola):
-                dados_vetor = sensor.ler(self, agente)
+                if sensor.nome == "Bússola":
+                    dados_vetor = sensor.ler(self, agente)
 
         # LABIRINTO
         # TODO: observacaoPara Labirinto

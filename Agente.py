@@ -1,31 +1,42 @@
 from abc import ABC, abstractmethod
-from typing import Any
-import Sensor
-import Agente
-import Posicao
+from typing import List, Optional, Any
+from Elemento import Elemento
+from Posicao import Posicao
+from Acao import Acao, TipoAcao
+from Observacao import Observacao
+# from Sensor import Sensor
 
-class Agente(ABC):
+class Agente(Elemento, ABC):
 
-    def __init__ (self, passos_max: int, posicao: Posicao, nome: str):
-        self.nome = nome
-        self.posicao = posicao
-        self.passo_max = passos_max
+    def __init__ (self, id_agente: id, posicao: Posicao):
+        super().__init__(f"Agente {id_agente}", posicao, "A", True)
+        self.id = id_agente
+
+        self.recompensa_acumulada = 0.0
+        self.sensores = []  # lista de sensores
+        self.politica = None
+        self.ultima_observacao = None
+        self.ativo = True
+
+    def definir_politica(self, politica):
+        self.politica = politica
 
     def cria(self, nome_do_ficheiro: str):
 
         pass
 
-    def observacao(sefl, obs: Any):
-        pass
+    def observacao(self, obs: Observacao):
+        self.ultima_observacao = obs
 
+    @abstractmethod
     def age(self):
         pass
     
     def avaliacaoEstadoAtual(self, recompensa: float):
-        pass
+        self.recompensa_acumulada += recompensa
 
-    def instala (sensor: Sensor):
-        pass
+    def instala (self, sensor):
+        self.sensores.append(sensor)
 
-    def comunica(mensagem: str, de_agente: Agente):
-        pass
+    def comunica(self, mensagem: str, de_agente: 'Agente'):
+        print(f"[{self.nome}] Recebi: {mensagem}")

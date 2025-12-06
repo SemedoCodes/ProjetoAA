@@ -2,18 +2,18 @@ from Agente import Agente
 from Acao import Acao, TipoAcao
 from Posicao import Posicao
 
-def __init_ (self, passos_max, posicao: Posicao, conhecimento: dict):
-    self.passos_max = passos_max
-    self.posicao = posicao
-    conhecimento = []
+class AgenteSimples(Agente):
+    def __init__(self, id_agente: int, posicao: Posicao):
+        super().__init__(id_agente, posicao)
 
-def cria(nome_do_ficheiro_parametros: str):
-    pass
-    
-def observacao(self, obs):
-    self.conhecimento.append(obs)
+    def cria(nome_do_ficheiro_parametros: str) -> 'AgenteSimples':
+        novo_agente = AgenteSimples(1, Posicao(0, 0))
+        return novo_agente
 
-def age(self):
-    return self.politica.selecionar_acao(self.obs)
+    def age(self) -> Acao:
+        if self.ultima_observacao is None or self.politica is None:
+            return Acao(TipoAcao.FAZER_NADA)
+        acao = self.politica.selecionar_acao(self.ultima_observacao)
 
+        return acao
 
