@@ -3,7 +3,7 @@ from typing import Dict, Any
 
 class Politica(ABC):
     @abstractmethod
-    def selecionar_acao(self, observacao: Dict[str, Any]) -> Any:
+    def selecionar_acao(self, observacao: 'Observacao') -> 'Acao':
         """
         Recebe a observação do Ambiente e
         devolve a ação a ser executada.
