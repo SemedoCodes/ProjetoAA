@@ -116,13 +116,23 @@ class MotorDeSimulacao:
                 acoes_e_observacoes[a] = (acao, obs)
 
             for a, (acao, obs_anterior) in acoes_e_observacoes.items():
-                recompensa = self.ambiente.agir(acao, a) # executar ação
+                recompensa_ext = self.ambiente.agir(acao, a) # executar ação
                 obs_nova = self.ambiente.observacaoPara(a) # nova observação
-                a.avaliacaoEstadoAtual(recompensa) # atualizar a recompensa no agente
+
+                # faz a soma
+                if hasattr(a, 'processar_recompensa'):
+                    recompensa_total = a.processar_recompensa(recompensa_ext, obs_nova)
+                else:
+                    recompensa_total = recompensa_ext
+
+                if hasattr(a.politica, 'aprende'):
+                    a.politica.aprende(obs_anterior, acao, recompensa_total, obs_nova)
+
+                a.avaliacaoEstadoAtual(recompensa_total) # atualizar a recompensa no agente
 
                 # aprendizagem
                 if hasattr(a.politica, 'aprende'):
-                    a.politica.aprende(obs_anterior, acao, recompensa, obs_nova)
+                    a.politica.aprende(obs_anterior, acao, recompensa_total, obs_nova)
 
                 a.observacao(obs_nova) # atualizar a observação do agente
 
@@ -133,6 +143,7 @@ class MotorDeSimulacao:
             # verificar se ganhou
             if self.se_ganhou() == True:
                 print("Ganhou!!")
+                print("Número total de passos: " + str(self.passo_atual))
                 return
 
         if not ganhou:
