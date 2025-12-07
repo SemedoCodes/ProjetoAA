@@ -5,15 +5,15 @@ class TipoAccao(Enum):
     COMUNICAR = "COMUNICAR" # Usada no Labirinto
     FAZER_NADA = "NADA"     # Usada para esperar
 
-class Acao:
+class Accao:
     def __init__(self, tipo: TipoAccao, parametros: dict = None):
         self.tipo = tipo
         self.parametros = parametros if parametros is not None else {}
 
     @staticmethod
     def mover(dx: int, dy: int):
-        return Acao(TipoAccao.MOVER, {'dx': dx, 'dy': dy})
+        return Accao(TipoAccao.MOVER, {'dx': dx, 'dy': dy})
 
     @staticmethod
     def comunicar(mensagem: str):
-        return Acao(TipoAccao.COMUNICAR, {'msg': mensagem})
+        return Accao(TipoAccao.COMUNICAR, {'msg': mensagem})

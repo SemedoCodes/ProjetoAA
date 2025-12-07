@@ -1,6 +1,6 @@
 from Politica import Politica
 from Observacao import Observacao
-from Accao import Acao, TipoAccao
+from Accao import Accao, TipoAccao
 from typing import Dict, Any
 import random
 
@@ -18,11 +18,9 @@ class PoliticaFixa(Politica):
         """
         Carrega as regras a partir de um ficheiro.
         """
-        self.regras_fixas = {
+        # self.regras_fixas = ler_regras_do_ficheiro(ficheiro)
 
-        }
-
-    def selecionar_acao(self, obs) -> Acao:
+    def selecionar_acao(self, obs) -> Accao:
         """
         Consulta as regras com base no que o agente viu.
         """
@@ -31,27 +29,27 @@ class PoliticaFixa(Politica):
 
             # se ambos forem 0, estamos em cima do farol
             if dx_total == 0 and dy_total == 0:
-                return Acao(TipoAccao.FAZER_NADA)
+                return Accao(TipoAccao.FAZER_NADA)
 
             # se a distância horizontal for maior ou igual à vertical -> move em X
             if abs(dx_total) >= abs(dy_total):
                 if dx_total > 0:
-                    return Acao.mover(1, 0)  # Mover Este
+                    return Accao.mover(1, 0)  # Mover Este
                 else:
-                    return Acao.mover(-1, 0)  # Mover Oeste
+                    return Accao.mover(-1, 0)  # Mover Oeste
 
             # mover em Y
             else:
                 if dy_total > 0:
-                    return Acao.mover(0, 1)  # Mover Sul
+                    return Accao.mover(0, 1)  # Mover Sul
                 else:
-                    return Acao.mover(0, -1)  # Mover Norte
+                    return Accao.mover(0, -1)  # Mover Norte
         else:
             possiveis = []
-            if obs.ver_direcao("Norte") == "Saida": return Acao.mover(0, -1)
-            if obs.ver_direcao("Sul") == "Saida":   return Acao.mover(0, 1)
-            if obs.ver_direcao("Este") == "Saida":  return Acao.mover(1, 0)
-            if obs.ver_direcao("Oeste") == "Saida": return Acao.mover(-1, 0)
+            if obs.ver_direcao("Norte") == "Saida": return Accao.mover(0, -1)
+            if obs.ver_direcao("Sul") == "Saida":   return Accao.mover(0, 1)
+            if obs.ver_direcao("Este") == "Saida":  return Accao.mover(1, 0)
+            if obs.ver_direcao("Oeste") == "Saida": return Accao.mover(-1, 0)
 
             if obs.ver_direcao("Norte") == "Vazio": possiveis.append((0, -1))
             if obs.ver_direcao("Sul") == "Vazio":   possiveis.append((0, 1))
@@ -60,6 +58,7 @@ class PoliticaFixa(Politica):
 
             if possiveis:
                 dx, dy = random.choice(possiveis)
-                return Acao.mover(dx, dy)
+                return Accao.mover(dx, dy)
 
-            return Acao(TipoAccao.FAZER_NADA)
+            return Accao(TipoAccao.FAZER_NADA)
+

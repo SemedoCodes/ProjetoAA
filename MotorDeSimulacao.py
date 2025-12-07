@@ -2,7 +2,7 @@ import time
 from typing import List, Dict, Type, Optional, Any, Tuple
 from Ambiente import Ambiente
 from Agente import Agente
-from Accao import Acao, TipoAccao
+from Accao import Accao, TipoAccao
 from Posicao import Posicao
 from Elemento import Elemento
 from Parede import Parede
@@ -104,7 +104,7 @@ class MotorDeSimulacao:
 
         while not ganhou and self.passo_atual < self.max_passos:
             self.passo_atual += 1
-            acoes_e_observacoes: Dict[Agente, Tuple[Acao, Any]] = {}
+            acoes_e_observacoes: Dict[Agente, Tuple[Accao, Any]] = {}
 
             self.ambiente.atualizacao()
 
@@ -116,12 +116,15 @@ class MotorDeSimulacao:
                 acoes_e_observacoes[a] = (acao, obs)
 
             for a, (acao, obs_anterior) in acoes_e_observacoes.items():
-                recompensa = self.ambiente.agir(acao, a)
-                a.avaliacaoEstadoAtual(recompensa)
+                recompensa = self.ambiente.agir(acao, a) # executar ação
+                obs_nova = self.ambiente.observacaoPara(a) # nova observação
+                a.avaliacaoEstadoAtual(recompensa) # atualizar a recompensa no agente
 
-                obs_nova = self.ambiente.observacaoPara(a)
+                # aprendizagem
+                if hasattr(a.politica, 'aprende'):
+                    a.politica.aprende(obs_anterior, acao, recompensa, obs_nova)
 
-                a.observacao(obs_nova)
+                a.observacao(obs_nova) # atualizar a observação do agente
 
             # atualizar a grelha
             print(self.ambiente)
