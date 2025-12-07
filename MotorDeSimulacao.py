@@ -12,6 +12,8 @@ from Farol import Farol
 from PoliticaFixa import PoliticaFixa
 from SensorBussola import SensorBussola
 from AgenteSimples import AgenteSimples
+from Saida import Saida
+from SensorVisao import SensorVisao
 
 class MotorDeSimulacao:
     def __init__(self):
@@ -19,7 +21,7 @@ class MotorDeSimulacao:
         self.ambiente: Ambiente = None
 
         self.passo_atual = 0
-        self.max_passos = 15
+        self.max_passos = 10
         self.tempo_espera = 0.5 # segundos entre passos
 
     def cria(self, nome_do_ficheiro: str):
@@ -50,13 +52,17 @@ class MotorDeSimulacao:
                     elementos.append(farol)
                 if e == 'A':
                     agente = AgenteSimples(1, pos)
-                    agente.instala(SensorBussola())
+                    #agente.instala(SensorBussola())
+                    agente.instala(SensorVisao())
                     agente.definir_politica(PoliticaFixa())
                     elementos.append(agente)
                     self.agentes.append(agente)
                 if e == 'O':
                     obstaculo = Obstaculo(pos)
                     elementos.append(obstaculo)
+                if e == 'S':
+                    saida = Saida(pos)
+                    elementos.append(saida)
 
         self.ambiente = Ambiente(largura, altura, elementos)
         return
@@ -97,13 +103,15 @@ class MotorDeSimulacao:
             print("\n Perdeu: número máximo de passos atingidos.")
 
     def se_ganhou(self):
-        # TODO: adicionar a saída do labirinto
         for e in self.ambiente.elementos:
-            if isinstance(e, Farol):
-                farol = e
+            if isinstance(e, Farol) or isinstance(e, Saida):
+                objetivo = e
                 break
 
+        if objetivo is None:
+            return False
+
         for a in self.agentes:
-            if a.posicao == farol.posicao:
+            if a.posicao == objetivo.posicao:
                 return True
         return False

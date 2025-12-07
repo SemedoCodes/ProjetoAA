@@ -6,6 +6,7 @@ from Agente import Agente
 from Observacao import Observacao
 from Farol import Farol
 from SensorBussola import SensorBussola
+from SensorVisao import SensorVisao
 
 class Ambiente:
     def __init__(self, largura: int, altura: int, elementos: List[Elemento]):
@@ -83,16 +84,20 @@ class Ambiente:
         dados_vizinhanca = {}
 
         for sensor in agente.sensores:
+            # sensor do farol
             if isinstance(sensor, SensorBussola):
-                if sensor.nome == "Bússola":
-                    dados_vetor = sensor.ler(self, agente)
+                dados_vetor = sensor.ler(self, agente)
+
+            # sensor do labirinto
+            if isinstance(sensor, SensorVisao):
+                dados_vizinhanca=sensor.ler(self, agente)
 
         # LABIRINTO
         # TODO: observacaoPara Labirinto
         return Observacao(
             posicao_agente=agente.posicao,
             vetor_farol=dados_vetor,  # usado no Farol
-            # vizinhanca=vizinhanca,  # usado no Labirinto
+            vizinhanca=dados_vizinhanca,  # usado no Labirinto
             posicoes_risco=self.posicoes_risco
         )
 

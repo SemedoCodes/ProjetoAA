@@ -2,6 +2,7 @@ from Politica import Politica
 from Observacao import Observacao
 from Acao import Acao, TipoAcao
 from typing import Dict, Any
+import random
 
 class PoliticaFixa(Politica):
     """
@@ -25,8 +26,7 @@ class PoliticaFixa(Politica):
         """
         Consulta as regras com base no que o agente viu.
         """
-        # TODO: IMPPLEMENTAR REGRAS PARA O LABIRINTO
-        if obs.tem_vetor() is not None:
+        if obs.tem_vetor():
             dx_total, dy_total = obs.vetor_farol
 
             # se ambos forem 0, estamos em cima do farol
@@ -46,6 +46,20 @@ class PoliticaFixa(Politica):
                     return Acao.mover(0, 1)  # Mover Sul
                 else:
                     return Acao.mover(0, -1)  # Mover Norte
+        else:
+            possiveis = []
+            if obs.ver_direcao("Norte") == "Saida": return Acao.mover(0, -1)
+            if obs.ver_direcao("Sul") == "Saida":   return Acao.mover(0, 1)
+            if obs.ver_direcao("Este") == "Saida":  return Acao.mover(1, 0)
+            if obs.ver_direcao("Oeste") == "Saida": return Acao.mover(-1, 0)
+
+            if obs.ver_direcao("Norte") == "Vazio": possiveis.append((0, -1))
+            if obs.ver_direcao("Sul") == "Vazio":   possiveis.append((0, 1))
+            if obs.ver_direcao("Este") == "Vazio":  possiveis.append((1, 0))
+            if obs.ver_direcao("Oeste") == "Vazio": possiveis.append((-1, 0))
+
+            if possiveis:
+                dx, dy = random.choice(possiveis)
+                return Acao.mover(dx, dy)
 
             return Acao(TipoAcao.FAZER_NADA)
-        return (0, 0)
