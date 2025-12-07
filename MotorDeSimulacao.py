@@ -2,19 +2,14 @@ import time
 from typing import List, Dict, Type, Optional, Any, Tuple
 from Ambiente import Ambiente
 from Agente import Agente
-from Accao import Acao, TipoAcao
-from Politica import Politica
+from Accao import Acao, TipoAccao
 from Posicao import Posicao
 from Elemento import Elemento
 from Parede import Parede
 from Obstaculo import Obstaculo
 from Farol import Farol
-from PoliticaFixa import PoliticaFixa
-from SensorBussola import SensorBussola
 from AgenteSimples import AgenteSimples
 from Saida import Saida
-from SensorVisao import SensorVisao
-from PoliticaAprendizagem import PoliticaAprendizagem
 
 class MotorDeSimulacao:
     def __init__(self):
@@ -86,9 +81,10 @@ class MotorDeSimulacao:
                     elementos.append(Saida(pos))
                 elif e == 'A':
                     agente = AgenteSimples.cria(nome_do_ficheiro_parametros)
-                    agente.id = len(novo_motor.agentes) + 1
-                    agente.posicao = pos
-
+                    agente.configura_ambiente(
+                        id_agente=len(novo_motor.agentes) + 1,
+                        posicao_inicial=pos
+                    )
                     elementos.append(agente)
                     novo_motor.agentes.append(agente)
 
@@ -116,24 +112,25 @@ class MotorDeSimulacao:
                 obs = self.ambiente.observacaoPara(a)
                 a.observacao(obs)
                 acao = a.age()
+
                 acoes_e_observacoes[a] = (acao, obs)
 
-                for a, (acao, obs_anterior) in acoes_e_observacoes.items():
-                    recompensa = self.ambiente.agir(acao, a)
-                    a.avaliacaoEstadoAtual(recompensa)
+            for a, (acao, obs_anterior) in acoes_e_observacoes.items():
+                recompensa = self.ambiente.agir(acao, a)
+                a.avaliacaoEstadoAtual(recompensa)
 
-                    obs_nova = self.ambiente.observacaoPara(a)
+                obs_nova = self.ambiente.observacaoPara(a)
 
-                    a.observacao(obs_nova)
+                a.observacao(obs_nova)
 
-                # atualizar a grelha
-                print(self.ambiente)
-                time.sleep(self.tempo_espera)
+            # atualizar a grelha
+            print(self.ambiente)
+            time.sleep(self.tempo_espera)
 
-                # verificar se ganhou
-                if self.se_ganhou() == True:
-                    print("Ganhou!!")
-                    return
+            # verificar se ganhou
+            if self.se_ganhou() == True:
+                print("Ganhou!!")
+                return
 
         if not ganhou:
             print("\n Perdeu: número máximo de passos atingidos.")

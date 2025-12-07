@@ -1,5 +1,5 @@
 from Politica import Politica
-from Accao import Acao, TipoAcao
+from Accao import Acao, TipoAccao
 
 class PoliticaAprendizagem(Politica):
 
@@ -8,7 +8,7 @@ class PoliticaAprendizagem(Politica):
         self.nome = "Política Aprendizagem"
 
     def selecionar_acao(self, obs):
-        return Acao(TipoAcao.FAZER_NADA)  # Placeholder
+        return Acao(TipoAccao.FAZER_NADA)  # Placeholder
 
     def carregar_politica(self, ficheiro):
         pass

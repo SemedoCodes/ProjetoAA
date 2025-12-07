@@ -1,8 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional, Any
 from Elemento import Elemento
 from Posicao import Posicao
-from Accao import Acao, TipoAcao
 from Observacao import Observacao
 # from Sensor import Sensor
 
@@ -22,7 +20,6 @@ class Agente(Elemento, ABC):
         self.politica = politica
 
     def cria(self, nome_do_ficheiro: str):
-
         pass
 
     def observacao(self, obs: Observacao):
@@ -31,7 +28,11 @@ class Agente(Elemento, ABC):
     @abstractmethod
     def age(self):
         pass
-    
+
+    @abstractmethod
+    def configura_ambiente(self, id_agente: int, posicao: Posicao):
+        pass
+
     def avaliacaoEstadoAtual(self, recompensa: float):
         self.recompensa_acumulada += recompensa
 
