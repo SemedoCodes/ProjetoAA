@@ -1,10 +1,11 @@
 from Elemento import Elemento
 from typing import List
 from Posicao import Posicao
-from Acao import Acao, TipoAcao
+from Accao import Acao, TipoAcao
 from Agente import Agente
 from Observacao import Observacao
 from Farol import Farol
+from Saida import Saida
 from SensorBussola import SensorBussola
 from SensorVisao import SensorVisao
 
@@ -36,7 +37,6 @@ class Ambiente:
             nova_pos = Posicao(novo_x, novo_y)
 
             # verificar se não saí dos limites da grelha
-            # TODO: REVER PARA CENARIO DE LABIRITNO PORQUE SAIDA VAI SER NAS MARGENS
             if not (0 <= novo_x < self.largura and 0 <= novo_y < self.altura):
                 recompensa -= 1.0 # penalidade e não mexe
 
@@ -44,7 +44,7 @@ class Ambiente:
             elementos_pos = self.todos_elementos_posicao(nova_pos)
 
             colisao = False
-            encontrou_farol = False
+            encontrou_objetivo = False
 
             for elem in elementos_pos:
                 if elem == agente:
@@ -55,16 +55,15 @@ class Ambiente:
                     colisao = True
 
                 # verificar se é farol
-                if isinstance(elem, Farol):
-                    encontrou_farol = True
+                if isinstance(elem, Farol) or isinstance(elem, Saida):
+                    encontrou_objetivo = True
 
             if colisao:
                 recompensa = -5.0
             else:
-                # agente move-se
                 agente.posicao = nova_pos
 
-                if encontrou_farol:
+                if encontrou_objetivo:
                     recompensa = 100.0
 
         elif acao.tipo == TipoAcao.COMUNICAR:
@@ -79,7 +78,6 @@ class Ambiente:
         return recompensa
 
     def observacaoPara(self, agente: Agente) -> Observacao:
-        # FAROL
         dados_vetor = None
         dados_vizinhanca = {}
 
@@ -92,8 +90,6 @@ class Ambiente:
             if isinstance(sensor, SensorVisao):
                 dados_vizinhanca=sensor.ler(self, agente)
 
-        # LABIRINTO
-        # TODO: observacaoPara Labirinto
         return Observacao(
             posicao_agente=agente.posicao,
             vetor_farol=dados_vetor,  # usado no Farol

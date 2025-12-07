@@ -1,13 +1,55 @@
+from typing import Any, Dict
+
 from Agente import Agente
-from Acao import Acao, TipoAcao
+from Accao import Acao, TipoAcao
+from PoliticaAprendizagem import PoliticaAprendizagem
+from PoliticaFixa import PoliticaFixa
 from Posicao import Posicao
+from SensorBussola import SensorBussola
+from SensorVisao import SensorVisao
+
 
 class AgenteSimples(Agente):
     def __init__(self, id_agente: int, posicao: Posicao):
         super().__init__(id_agente, posicao)
 
-    def cria(nome_do_ficheiro_parametros: str) -> 'AgenteSimples':
-        novo_agente = AgenteSimples(1, Posicao(0, 0))
+    @classmethod
+    def cria(cls, nome_do_ficheiro_parametros: str) -> 'AgenteSimples':
+
+        # ler os parametros
+        parametros: Dict[str, Any] = {}
+        try:
+            with open(nome_do_ficheiro_parametros, 'r', encoding='utf-8') as f:
+                for linha in f:
+                    linha = linha.strip()
+                    if not linha or linha.startswith('#'): continue
+                    chave, valor = linha.split('=', 1)
+                    parametros[chave.strip()] = valor.strip()
+        except FileNotFoundError:
+            print(f"ERRO (Agente): Ficheiro de parâmetros '{nome_do_ficheiro_parametros}' não encontrado.")
+
+        novo_agente = cls(id_agente=0, posicao=Posicao(0, 0))
+
+        politica_nome = parametros.get('tipo_politica', 'PoliticaFixa')
+
+        if politica_nome == 'PoliticaFixa':
+            novo_agente.definir_politica(PoliticaFixa())
+        elif politica_nome == 'PoliticaAprendizagem':
+            novo_agente.definir_politica(PoliticaAprendizagem())
+        else:
+            print(f"Aviso (Agente): Política '{politica_nome}' desconhecida. Usando PoliticaFixa.")
+            novo_agente.definir_politica(PoliticaFixa())
+
+        tipo_problema = parametros.get('tipo_problema', 'Farol')
+
+        if tipo_problema == 'Farol':
+            novo_agente.instala(SensorBussola())
+        elif tipo_problema == 'Labirinto':
+            novo_agente.instala(SensorVisao())
+        else:
+            novo_agente.instala(SensorVisao())
+            novo_agente.instala(SensorBussola())
+
         return novo_agente
 
     def age(self) -> Acao:
