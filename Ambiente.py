@@ -1,7 +1,7 @@
 from Elemento import Elemento
 from typing import List
 from Posicao import Posicao
-from Accao import Acao, TipoAcao
+from Accao import Acao, TipoAccao
 from Agente import Agente
 from Observacao import Observacao
 from Farol import Farol
@@ -26,7 +26,7 @@ class Ambiente:
     def agir(self, acao: Acao, agente: Agente) ->float:
         recompensa = 0.0
 
-        if acao.tipo == TipoAcao.MOVER:
+        if acao.tipo == TipoAccao.MOVER:
             recompensa = -0.1 # recompensa por defeito
 
             dx = acao.parametros.get('dx', 0)
@@ -66,7 +66,7 @@ class Ambiente:
                 if encontrou_objetivo:
                     recompensa = 100.0
 
-        elif acao.tipo == TipoAcao.COMUNICAR:
+        elif acao.tipo == TipoAccao.COMUNICAR:
             # avisar que posição é perigosa
 
             # verificar se a posição já não está na lista

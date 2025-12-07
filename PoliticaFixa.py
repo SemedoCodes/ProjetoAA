@@ -1,6 +1,6 @@
 from Politica import Politica
 from Observacao import Observacao
-from Accao import Acao, TipoAcao
+from Accao import Acao, TipoAccao
 from typing import Dict, Any
 import random
 
@@ -31,7 +31,7 @@ class PoliticaFixa(Politica):
 
             # se ambos forem 0, estamos em cima do farol
             if dx_total == 0 and dy_total == 0:
-                return Acao(TipoAcao.FAZER_NADA)
+                return Acao(TipoAccao.FAZER_NADA)
 
             # se a distância horizontal for maior ou igual à vertical -> move em X
             if abs(dx_total) >= abs(dy_total):
@@ -62,4 +62,4 @@ class PoliticaFixa(Politica):
                 dx, dy = random.choice(possiveis)
                 return Acao.mover(dx, dy)
 
-            return Acao(TipoAcao.FAZER_NADA)
+            return Acao(TipoAccao.FAZER_NADA)
