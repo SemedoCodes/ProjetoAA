@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import List, Optional, Any
 from Elemento import Elemento
 from Posicao import Posicao
-from Acao import Acao, TipoAcao
+from Accao import Acao, TipoAcao
 from Observacao import Observacao
 # from Sensor import Sensor
 

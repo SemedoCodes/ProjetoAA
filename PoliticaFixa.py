@@ -1,6 +1,6 @@
 from Politica import Politica
 from Observacao import Observacao
-from Acao import Acao, TipoAcao
+from Accao import Acao, TipoAcao
 from typing import Dict, Any
 import random
 

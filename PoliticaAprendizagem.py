@@ -1,5 +1,5 @@
 from Politica import Politica
-from Acao import Acao, TipoAcao
+from Accao import Acao, TipoAcao
 
 class PoliticaAprendizagem(Politica):
 

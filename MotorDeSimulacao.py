@@ -1,8 +1,8 @@
 import time
-from typing import List
+from typing import List, Dict, Type, Optional, Any, Tuple
 from Ambiente import Ambiente
 from Agente import Agente
-from Acao import Acao, TipoAcao
+from Accao import Acao, TipoAcao
 from Politica import Politica
 from Posicao import Posicao
 from Elemento import Elemento
@@ -14,6 +14,7 @@ from SensorBussola import SensorBussola
 from AgenteSimples import AgenteSimples
 from Saida import Saida
 from SensorVisao import SensorVisao
+from PoliticaAprendizagem import PoliticaAprendizagem
 
 class MotorDeSimulacao:
     def __init__(self):
@@ -21,19 +22,50 @@ class MotorDeSimulacao:
         self.ambiente: Ambiente = None
 
         self.passo_atual = 0
-        self.max_passos = 10
+        self.max_passos = 100 # por defeito
         self.tempo_espera = 0.5 # segundos entre passos
 
-    def cria(self, nome_do_ficheiro: str):
-        self.agentes = []
+    # cria e inicializa a instância da classe apartir do ficheiro de parametros
+    @classmethod
+    def cria(cls, nome_do_ficheiro_parametros: str) -> 'MotorDeSimulacao':
+        novo_motor = cls()
+        parametros: Dict[str, Any] = {}
+        mapa_ficheiro: Optional[str] = None
+
+        # ler o ficheiro
+        try:
+            with open(nome_do_ficheiro_parametros, 'r', encoding='utf-8') as f:
+                for linha in f:
+                    linha = linha.strip()
+                    if not linha or linha.startswith('#'): continue
+
+                    chave, valor = linha.split('=', 1)
+                    chave = chave.strip()
+                    valor = valor.strip()
+                    parametros[chave] = valor
+        except FileNotFoundError:
+            print(f"ERRO: O ficheiro de parâmetros '{nome_do_ficheiro_parametros}' não foi encontrado.")
+            return novo_motor
+
+        # criar o motor
+        mapa_ficheiro = parametros.get('mapa_ficheiro')
+
+        if 'max_passos' in parametros:
+            try:
+                novo_motor.max_passos = int(parametros['max_passos'])
+            except ValueError:
+                print("Aviso: max_passos inválido. Usando valor padrão (100).")
+
+        if not mapa_ficheiro:
+            print("ERRO: Parâmetro 'mapa_ficheiro' não especificado.")
+            return novo_motor
 
         try:
-            f = open(nome_do_ficheiro, 'r', encoding='utf-8')
-            linhas = f.readlines()
-            f.close()
+            with open(mapa_ficheiro, 'r', encoding='utf-8') as f:
+                linhas = f.readlines()
         except FileNotFoundError:
-            print(f"ERRO: O ficheiro '{nome_do_ficheiro}' não foi encontrado.")
-            return
+            print(f"ERRO: O ficheiro de mapa '{mapa_ficheiro}' não foi encontrado.")
+            return novo_motor
 
         altura = len(linhas)
         largura = len(linhas[0].rstrip('\n')) # remove o caracter invisível \n
@@ -45,52 +77,56 @@ class MotorDeSimulacao:
                     continue
                 pos = Posicao(x,y)
                 if e == '#':
-                    parede = Parede(pos)
-                    elementos.append(parede)
-                if e == 'F':
-                    farol = Farol(pos)
-                    elementos.append(farol)
-                if e == 'A':
-                    agente = AgenteSimples(1, pos)
-                    #agente.instala(SensorBussola())
-                    agente.instala(SensorVisao())
-                    agente.definir_politica(PoliticaFixa())
-                    elementos.append(agente)
-                    self.agentes.append(agente)
-                if e == 'O':
-                    obstaculo = Obstaculo(pos)
-                    elementos.append(obstaculo)
-                if e == 'S':
-                    saida = Saida(pos)
-                    elementos.append(saida)
+                    elementos.append(Parede(pos))
+                elif e == 'F':
+                    elementos.append(Farol(pos))
+                elif e == 'O':
+                    elementos.append(Obstaculo(pos))
+                elif e == 'S':
+                    elementos.append(Saida(pos))
+                elif e == 'A':
+                    agente = AgenteSimples.cria(nome_do_ficheiro_parametros)
+                    agente.id = len(novo_motor.agentes) + 1
+                    agente.posicao = pos
 
-        self.ambiente = Ambiente(largura, altura, elementos)
-        return
+                    elementos.append(agente)
+                    novo_motor.agentes.append(agente)
+
+        novo_motor.ambiente = Ambiente(largura, altura, elementos)
+        return novo_motor
 
     def listaAgentes(self):
         return self.agentes
 
     def executa(self):
-        print(self.ambiente)
+        if self.ambiente is None:
+            print("ERRO DE EXECUÇÃO: O Ambiente não foi inicializado corretamente. Verifique os ficheiros de mapa.")
+            return
 
+        print(self.ambiente)
         ganhou = False
 
         while not ganhou and self.passo_atual < self.max_passos:
             self.passo_atual += 1
+            acoes_e_observacoes: Dict[Agente, Tuple[Acao, Any]] = {}
 
-            # meter agente a agir
+            self.ambiente.atualizacao()
+
             for a in self.agentes:
                 obs = self.ambiente.observacaoPara(a)
                 a.observacao(obs)
                 acao = a.age()
+                acoes_e_observacoes[a] = (acao, obs)
 
-                # aprender
-                recompensa = self.ambiente.agir(acao, a)
+                for a, (acao, obs_anterior) in acoes_e_observacoes.items():
+                    recompensa = self.ambiente.agir(acao, a)
+                    a.avaliacaoEstadoAtual(recompensa)
 
-                # TODO: metodo para adicionar a recompensa
+                    obs_nova = self.ambiente.observacaoPara(a)
+
+                    a.observacao(obs_nova)
 
                 # atualizar a grelha
-                self.ambiente.atualizacao()
                 print(self.ambiente)
                 time.sleep(self.tempo_espera)
 
@@ -103,6 +139,7 @@ class MotorDeSimulacao:
             print("\n Perdeu: número máximo de passos atingidos.")
 
     def se_ganhou(self):
+        objetivo = None
         for e in self.ambiente.elementos:
             if isinstance(e, Farol) or isinstance(e, Saida):
                 objetivo = e
