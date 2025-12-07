@@ -1,7 +1,7 @@
 from Elemento import Elemento
 from typing import List
 from Posicao import Posicao
-from Accao import Acao, TipoAccao
+from Accao import Accao, TipoAccao
 from Agente import Agente
 from Observacao import Observacao
 from Farol import Farol
@@ -23,11 +23,11 @@ class Ambiente:
                 elementosPosicao.append(e)
         return elementosPosicao
 
-    def agir(self, acao: Acao, agente: Agente) ->float:
+    def agir(self, acao: Accao, agente: Agente) ->float:
         recompensa = 0.0
 
         if acao.tipo == TipoAccao.MOVER:
-            recompensa = -0.1 # recompensa por defeito
+            recompensa -= 0.1 # penalidade por defeito
 
             dx = acao.parametros.get('dx', 0)
             dy = acao.parametros.get('dy', 0)
@@ -38,7 +38,8 @@ class Ambiente:
 
             # verificar se não saí dos limites da grelha
             if not (0 <= novo_x < self.largura and 0 <= novo_y < self.altura):
-                recompensa -= 1.0 # penalidade e não mexe
+                recompensa -= 1.0 # penalidade por movimento inválido
+                return recompensa
 
             # verificar colisões
             elementos_pos = self.todos_elementos_posicao(nova_pos)
@@ -59,21 +60,12 @@ class Ambiente:
                     encontrou_objetivo = True
 
             if colisao:
-                recompensa = -5.0
+                recompensa -= 5.0 # penalidade por colisão
             else:
                 agente.posicao = nova_pos
 
                 if encontrou_objetivo:
-                    recompensa = 100.0
-
-        elif acao.tipo == TipoAccao.COMUNICAR:
-            # avisar que posição é perigosa
-
-            # verificar se a posição já não está na lista
-            if agente.posicao not in self.posicoes_risco:
-                self.posicoes_risco.append(agente.posicao)
-
-            recompensa = -0.2
+                    recompensa += 100.0 # recompensa por atingir o objetivo
 
         return recompensa
 

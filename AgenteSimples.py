@@ -1,7 +1,7 @@
 from typing import Any, Dict
 
 from Agente import Agente
-from Accao import Acao, TipoAccao
+from Accao import Accao, TipoAccao
 from PoliticaAprendizagem import PoliticaAprendizagem
 from PoliticaFixa import PoliticaFixa
 from Posicao import Posicao
@@ -56,9 +56,9 @@ class AgenteSimples(Agente):
         self.id = id_agente
         self.posicao = posicao_inicial
 
-    def age(self) -> Acao:
+    def age(self) -> Accao:
         if self.ultima_observacao is None or self.politica is None:
-            return Acao(TipoAccao.FAZER_NADA)
+            return Accao(TipoAccao.FAZER_NADA)
         acao = self.politica.selecionar_acao(self.ultima_observacao)
 
         return acao
