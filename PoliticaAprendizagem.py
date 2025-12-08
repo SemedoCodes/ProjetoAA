@@ -1,4 +1,5 @@
 import random
+import json
 from Politica import Politica
 from Accao import Accao, TipoAccao
 from Observacao import Observacao
@@ -99,8 +100,27 @@ class PoliticaAprendizagem(Politica):
 
         self.q_table[(estado_ant, acao_str)] = novo_q
 
+    def guardar_politica(self, ficheiro: str):
+       
+       #Guarda a Q-Table num ficheiro txt
+
+       with open (ficheiro, "w") as f:
+           for (estado, acao), q in self.q_table.items():
+               x, y = estado
+               f.write(f"{x},{y},{acao},{q}\n")
+
+
     def carregar_politica(self, ficheiro: str):
-        """
-        Carrega a política de um ficheiro (regras ou Q-Table).
-        """
-        pass
+       
+        #Carrega a Q-Table de um ficheiro txt
+
+       self.q_table = {}
+       with open (ficheiro, "r") as f:
+           for linha in f:
+            linha = linha.strip()
+            if not linha:
+                continue
+            x_str, y_str, acao, q_str = linha.split(",")
+            estado = (int(x_str) , int(y_str))
+            q = float(q_str)
+            self.q_table[(estado,acao)] = q
