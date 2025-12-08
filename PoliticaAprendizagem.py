@@ -31,7 +31,6 @@ class PoliticaAprendizagem(Politica):
         return self.q_table.get((estado, acao_str), 0.0)
 
     def selecionar_acao(self, obs: Observacao) -> Accao:
-        print(self.q_table)
         estado = self._get_estado(obs)
 
         # 1. Explorar (Escolher aleatoriamente)
