@@ -5,7 +5,7 @@ from Observacao import Observacao
 
 class PoliticaAprendizagem(Politica):
 
-    def __init__(self, alpha=0.1, gamma=0.9, epsilon=0.1):
+    def __init__(self, alpha=0.1, gamma=0.9, epsilon=0.2):
         self.q_table = {}
         self.nome = "PolíticaAprendizagem"
 

@@ -1,8 +1,8 @@
 import time
-from typing import List, Dict, Type, Optional, Any, Tuple
+from typing import List, Dict, Optional, Any, Tuple
 from Ambiente import Ambiente
 from Agente import Agente
-from Accao import Accao, TipoAccao
+from Accao import Accao
 from Posicao import Posicao
 from Elemento import Elemento
 from Parede import Parede
@@ -10,8 +10,9 @@ from Obstaculo import Obstaculo
 from Farol import Farol
 from AgenteSimples import AgenteSimples
 from Saida import Saida
+from Simulador import Simulador
 
-class MotorDeSimulacao:
+class MotorDeSimulacao(Simulador):
     def __init__(self):
         self.agentes: List[Agente] = []
         self.ambiente: Ambiente = None
@@ -101,7 +102,9 @@ class MotorDeSimulacao:
 
         posicoes_iniciais = {a: Posicao(a.posicao.x, a.posicao.y) for a in self.agentes}
 
-        num_eps = 10
+        historico_global = []
+
+        num_eps = 100
 
         # ciclo de episódios
         for ep in range(1, num_eps + 1):
@@ -112,7 +115,9 @@ class MotorDeSimulacao:
             for a in self.agentes:
                 p_ini = posicoes_iniciais[a]
                 a.posicao = Posicao(p_ini.x, p_ini.y)  # volta ao início
-                if hasattr(a, 'historico_recente'): a.historico_recente = []
+                if hasattr(a, 'historico_recente'):
+                    a.historico_recente = []
+                a.recompensa_acumulada = 0.0
 
             while not ganhou and self.passo_atual < self.max_passos:
                 self.passo_atual += 1
@@ -124,7 +129,6 @@ class MotorDeSimulacao:
                     obs = self.ambiente.observacaoPara(a)
                     a.observacao(obs)
                     acao = a.age()
-
                     acoes_e_observacoes[a] = (acao, obs)
 
                 for a, (acao, obs_anterior) in acoes_e_observacoes.items():
@@ -144,20 +148,31 @@ class MotorDeSimulacao:
                     a.observacao(obs_nova) # atualizar a observação do agente
 
                 # atualizar a grelha
-                print(self.ambiente)
+                # print(self.ambiente)
                 time.sleep(self.tempo_espera)
 
                 # verificar se ganhou
                 if self.se_ganhou() == True:
-                    # print(self.ambiente)
+                    print(self.ambiente)
                     ganhou = True
                     print("Ganhou!!")
                     print(f"Episódio {ep}: Ganhou em {self.passo_atual} passos.")
 
-
             if not ganhou:
-                # print(self.ambiente)
+                print(self.ambiente)
                 print(f"Episódio {ep}: perdeu - número máximo de passos atingidos.")
+
+            # registo dos dados
+            for a in self.agentes:
+                dados_ep = {
+                    "episodio": ep,
+                    "agente_id": a.id,
+                    "passos": self.passo_atual,
+                    "ganhou": 1 if ganhou else 0,
+                    "recompensa_total": round(a.recompensa_acumulada, 2)
+                }
+                historico_global.append(dados_ep)
+            self.exportar_relatorio(historico_global, "relatorio.csv")
 
     def se_ganhou(self):
         objetivo = None
@@ -173,3 +188,14 @@ class MotorDeSimulacao:
             if a.posicao == objetivo.posicao:
                 return True
         return False
+
+    def exportar_relatorio(self, dados: List[Dict], nome_ficheiro: str):
+        try:
+            with open(nome_ficheiro, 'w', encoding='utf-8') as f:
+                f.write("Episodio,AgenteID,Passos,Ganhou,Recompensa\n")
+
+                for linha in dados:
+                    f.write(
+                        f"{linha['episodio']},{linha['agente_id']},{linha['passos']},{linha['ganhou']},{linha['recompensa_total']}\n")
+        except Exception as e:
+            print(f"Erro ao gravar relatório: {e}")
