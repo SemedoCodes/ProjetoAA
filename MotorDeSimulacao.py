@@ -18,7 +18,7 @@ class MotorDeSimulacao:
 
         self.passo_atual = 0
         self.max_passos = 100 # por defeito
-        self.tempo_espera = 0.5 # segundos entre passos
+        self.tempo_espera = 0.1 # segundos entre passos
 
     # cria e inicializa a instância da classe apartir do ficheiro de parametros
     @classmethod
@@ -99,55 +99,65 @@ class MotorDeSimulacao:
             print("ERRO DE EXECUÇÃO: O Ambiente não foi inicializado corretamente. Verifique os ficheiros de mapa.")
             return
 
-        print(self.ambiente)
-        ganhou = False
+        posicoes_iniciais = {a: Posicao(a.posicao.x, a.posicao.y) for a in self.agentes}
 
-        while not ganhou and self.passo_atual < self.max_passos:
-            self.passo_atual += 1
-            acoes_e_observacoes: Dict[Agente, Tuple[Accao, Any]] = {}
+        num_eps = 10
 
-            self.ambiente.atualizacao()
+        # ciclo de episódios
+        for ep in range(1, num_eps + 1):
+
+            self.passo_atual = 0
+            ganhou = False
 
             for a in self.agentes:
-                obs = self.ambiente.observacaoPara(a)
-                a.observacao(obs)
-                acao = a.age()
+                p_ini = posicoes_iniciais[a]
+                a.posicao = Posicao(p_ini.x, p_ini.y)  # volta ao início
+                if hasattr(a, 'historico_recente'): a.historico_recente = []
 
-                acoes_e_observacoes[a] = (acao, obs)
+            while not ganhou and self.passo_atual < self.max_passos:
+                self.passo_atual += 1
+                acoes_e_observacoes: Dict[Agente, Tuple[Accao, Any]] = {}
 
-            for a, (acao, obs_anterior) in acoes_e_observacoes.items():
-                recompensa_ext = self.ambiente.agir(acao, a) # executar ação
-                obs_nova = self.ambiente.observacaoPara(a) # nova observação
+                self.ambiente.atualizacao()
 
-                # faz a soma
-                if hasattr(a, 'processar_recompensa'):
-                    recompensa_total = a.processar_recompensa(recompensa_ext, obs_nova)
-                else:
-                    recompensa_total = recompensa_ext
+                for a in self.agentes:
+                    obs = self.ambiente.observacaoPara(a)
+                    a.observacao(obs)
+                    acao = a.age()
 
-                if hasattr(a.politica, 'aprende'):
-                    a.politica.aprende(obs_anterior, acao, recompensa_total, obs_nova)
+                    acoes_e_observacoes[a] = (acao, obs)
 
-                a.avaliacaoEstadoAtual(recompensa_total) # atualizar a recompensa no agente
+                for a, (acao, obs_anterior) in acoes_e_observacoes.items():
+                    recompensa_ext = self.ambiente.agir(acao, a) # executar ação
+                    obs_nova = self.ambiente.observacaoPara(a) # nova observação
 
-                # aprendizagem
-                if hasattr(a.politica, 'aprende'):
-                    a.politica.aprende(obs_anterior, acao, recompensa_total, obs_nova)
+                    # faz a soma
+                    if hasattr(a, 'processar_recompensa'):
+                        recompensa_total = a.processar_recompensa(recompensa_ext, obs_nova)
+                    else:
+                        recompensa_total = recompensa_ext
 
-                a.observacao(obs_nova) # atualizar a observação do agente
+                    if hasattr(a.politica, 'aprende'):
+                        a.politica.aprende(obs_anterior, acao, recompensa_total, obs_nova)
 
-            # atualizar a grelha
-            print(self.ambiente)
-            time.sleep(self.tempo_espera)
+                    a.avaliacaoEstadoAtual(recompensa_total)  # Acumular
+                    a.observacao(obs_nova) # atualizar a observação do agente
 
-            # verificar se ganhou
-            if self.se_ganhou() == True:
-                print("Ganhou!!")
-                print("Número total de passos: " + str(self.passo_atual))
-                return
+                # atualizar a grelha
+                print(self.ambiente)
+                time.sleep(self.tempo_espera)
 
-        if not ganhou:
-            print("\n Perdeu: número máximo de passos atingidos.")
+                # verificar se ganhou
+                if self.se_ganhou() == True:
+                    # print(self.ambiente)
+                    ganhou = True
+                    print("Ganhou!!")
+                    print(f"Episódio {ep}: Ganhou em {self.passo_atual} passos.")
+
+
+            if not ganhou:
+                # print(self.ambiente)
+                print(f"Episódio {ep}: perdeu - número máximo de passos atingidos.")
 
     def se_ganhou(self):
         objetivo = None
