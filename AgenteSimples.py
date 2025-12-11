@@ -41,7 +41,11 @@ class AgenteSimples(Agente):
         politica_nome = parametros.get('tipo_politica', 'PoliticaFixa')
 
         if politica_nome == 'PoliticaFixa':
-            novo_agente.definir_politica(PoliticaFixa())
+            politica = PoliticaFixa()
+            ficheiro_teste = parametros.get('ficheiro_teste')
+            if ficheiro_teste:
+                politica.carregar_politica(ficheiro_teste)
+            novo_agente.definir_politica(politica)
         elif politica_nome == 'PoliticaAprendizagem':
             novo_agente.definir_politica(PoliticaAprendizagem())
         else:

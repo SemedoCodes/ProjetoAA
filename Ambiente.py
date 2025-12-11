@@ -96,11 +96,18 @@ class Ambiente:
 
     def __str__(self):
         grelha = [[' ' for _ in range(self.largura)] for _ in range(self.altura)]
-
+        agentes_para_desenhar = []
         for e in self.elementos:
+            if isinstance(e, Agente):
+                agentes_para_desenhar.append(e)
             x, y = e.posicao.x, e.posicao.y
 
             if 0 <= x < self.largura and 0 <= y < self.altura:
                 grelha[y][x] = e.simbolo
+
+        for a in agentes_para_desenhar:
+            x, y = a.posicao.x, a.posicao.y
+            if 0 <= x < self.largura and 0 <= y < self.altura:
+                grelha[y][x] = a.simbolo
 
         return "\n".join(["".join(linha) for linha in grelha])

@@ -1,29 +1,39 @@
 from Politica import Politica
 from Observacao import Observacao
 from Accao import Accao, TipoAccao
-from typing import Dict, Any
+from typing import Dict, Any, Tuple
 import random
 
 class PoliticaFixa(Politica):
-    """
-    Política de agente com regras fixas/determinísticas.
-    Usado para o Modo de Teste ou agentes que não aprendem.
-    """
+    # política de agente com regras fixas/determinísticas.
+    # usado para o Modo de Teste ou agentes que não aprendem.
 
     def __init__(self):
         self.regras_fixas = {}
         self.nome = "Política Fixa"
 
     def carregar_politica(self, ficheiro: str):
-        """
-        Carrega as regras a partir de um ficheiro.
-        """
-        # self.regras_fixas = ler_regras_do_ficheiro(ficheiro)
+        # carrega a Q-Table de um ficheiro txt
+        self.q_table = {}
+        try:
+            with open(ficheiro, "r") as f:
+                for linha in f:
+                    linha = linha.strip()
+                    if not linha:
+                        continue
+                    x_str, y_str, acao, q_str = linha.split(",")
+                    estado = (int(x_str), int(y_str))
+                    q = float(q_str)
+                    self.q_table[(estado, acao)] = q
+        except FileNotFoundError:
+            print(f"AVISO: Ficheiro '{ficheiro}' não encontrado. A usar regras manuais.")
 
     def selecionar_acao(self, obs) -> Accao:
-        """
-        Consulta as regras com base no que o agente viu.
-        """
+        estado_atual = (obs.posicao.x, obs.posicao.y)
+        acao_teste = self.selecionar_acao_ficheiro(estado_atual)
+        if acao_teste:
+            return acao_teste
+
         if obs.tem_vetor():
             dx_total, dy_total = obs.vetor_farol
 
@@ -62,3 +72,26 @@ class PoliticaFixa(Politica):
 
             return Accao(TipoAccao.FAZER_NADA)
 
+    def selecionar_acao_ficheiro(self, estado: Tuple[int, int]) -> Accao:
+        if not hasattr(self, 'q_table'):
+            return None
+        acoes_possiveis = [
+            (0, -1, "Norte"), (0, 1, "Sul"), (1, 0, "Este"), (-1, 0, "Oeste")
+        ]
+
+        melhor_q = -float('inf')
+        melhor_acao = None
+
+        encontrou_alguma = False
+
+        for dx, dy, nome in acoes_possiveis:
+            if (estado, nome) in self.q_table:
+                encontrou_alguma = True
+                q_val = self.q_table[(estado, nome)]
+                if q_val > melhor_q:
+                    melhor_q = q_val
+                    melhor_acao = (dx, dy)
+
+        if encontrou_alguma and melhor_acao:
+            return Accao.mover(melhor_acao[0], melhor_acao[1])
+        return None

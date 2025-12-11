@@ -19,7 +19,7 @@ class MotorDeSimulacao(Simulador):
 
         self.passo_atual = 0
         self.max_passos = 100 # por defeito
-        self.tempo_espera = 0.1 # segundos entre passos
+        self.tempo_espera = 0.0 # segundos entre passos
 
     # cria e inicializa a instância da classe apartir do ficheiro de parametros
     @classmethod
@@ -106,9 +106,12 @@ class MotorDeSimulacao(Simulador):
 
         num_eps = 100
 
+        if self.agentes and self.agentes[0].politica.nome == "Política Fixa":
+            num_eps = 1
+
         # ciclo de episódios
         for ep in range(1, num_eps + 1):
-
+            print(f"Inicio do episódio: {ep}" )
             self.passo_atual = 0
             ganhou = False
 
@@ -126,7 +129,7 @@ class MotorDeSimulacao(Simulador):
                 self.ambiente.atualizacao()
 
                 for a in self.agentes:
-                    obs = self.ambiente.observacaoPara(a)
+                    obs = self.ambiente.observacaoPara(a) # ambiente cria observação para agente
                     a.observacao(obs)
                     acao = a.age()
                     acoes_e_observacoes[a] = (acao, obs)
@@ -148,7 +151,7 @@ class MotorDeSimulacao(Simulador):
                     a.observacao(obs_nova) # atualizar a observação do agente
 
                 # atualizar a grelha
-                # print(self.ambiente)
+                #print(self.ambiente)
                 time.sleep(self.tempo_espera)
 
                 # verificar se ganhou
@@ -173,6 +176,12 @@ class MotorDeSimulacao(Simulador):
                 }
                 historico_global.append(dados_ep)
             self.exportar_relatorio(historico_global, "relatorio.csv")
+
+        for a in self.agentes:
+            if hasattr(a.politica, 'guardar_politica'):
+                nome_ficheiro = f"qtable_agente_{a.id}.txt"
+                a.politica.guardar_politica(nome_ficheiro)
+                print(f"Política do Agente {a.id} guardada em '{nome_ficheiro}'.")
 
     def se_ganhou(self):
         objetivo = None
