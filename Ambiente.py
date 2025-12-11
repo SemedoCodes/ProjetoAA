@@ -1,5 +1,5 @@
 from Elemento import Elemento
-from typing import List, Set, Tuple
+from typing import List, Set, Tuple, Dict
 from Posicao import Posicao
 from Accao import Accao, TipoAccao
 from Agente import Agente
@@ -15,7 +15,7 @@ class Ambiente:
         self.altura = altura
         self.elementos = elementos
         self.posicoes_risco: List[Posicao] = []
-        self.rasto: Set[Tuple[int, int]] = set()
+        self.rasto: Dict[Tuple[int, int], str] = {}
 
     def todos_elementos_posicao(self, pos: Posicao) -> List[Elemento]:
         elementosPosicao: List[Elemento] = []
@@ -63,7 +63,16 @@ class Ambiente:
             if colisao:
                 recompensa -= 5.0 # penalidade por colisão
             else:
-                self.rasto.add((agente.posicao.x, agente.posicao.y))
+                simbolo_rasto = '.'
+
+                if dx != 0:
+                    simbolo_rasto = '_'
+
+                elif dy != 0:
+                    simbolo_rasto = '|'
+
+                # Guardamos o rasto na posição ONDE ELE ESTAVA (antes de se mexer)
+                self.rasto[(agente.posicao.x, agente.posicao.y)] = simbolo_rasto
                 agente.posicao = nova_pos
 
                 if encontrou_objetivo:
@@ -100,9 +109,9 @@ class Ambiente:
         grelha = [[' ' for _ in range(self.largura)] for _ in range(self.altura)]
         agentes_para_desenhar = []
 
-        for (rx, ry) in self.rasto:
+        for (rx, ry), simbolo in self.rasto.items():
             if 0 <= rx < self.largura and 0 <= ry < self.altura:
-                grelha[ry][rx] = '.'
+                grelha[ry][rx] = simbolo
 
         for e in self.elementos:
             if isinstance(e, Agente):
