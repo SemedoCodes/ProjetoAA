@@ -1,5 +1,5 @@
 from Elemento import Elemento
-from typing import List
+from typing import List, Set, Tuple
 from Posicao import Posicao
 from Accao import Accao, TipoAccao
 from Agente import Agente
@@ -15,6 +15,7 @@ class Ambiente:
         self.altura = altura
         self.elementos = elementos
         self.posicoes_risco: List[Posicao] = []
+        self.rasto: Set[Tuple[int, int]] = set()
 
     def todos_elementos_posicao(self, pos: Posicao) -> List[Elemento]:
         elementosPosicao: List[Elemento] = []
@@ -62,6 +63,7 @@ class Ambiente:
             if colisao:
                 recompensa -= 5.0 # penalidade por colisão
             else:
+                self.rasto.add((agente.posicao.x, agente.posicao.y))
                 agente.posicao = nova_pos
 
                 if encontrou_objetivo:
@@ -97,6 +99,11 @@ class Ambiente:
     def __str__(self):
         grelha = [[' ' for _ in range(self.largura)] for _ in range(self.altura)]
         agentes_para_desenhar = []
+
+        for (rx, ry) in self.rasto:
+            if 0 <= rx < self.largura and 0 <= ry < self.altura:
+                grelha[ry][rx] = '.'
+
         for e in self.elementos:
             if isinstance(e, Agente):
                 agentes_para_desenhar.append(e)
