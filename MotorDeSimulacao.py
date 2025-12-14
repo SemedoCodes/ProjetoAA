@@ -11,6 +11,8 @@ from Farol import Farol
 from AgenteSimples import AgenteSimples
 from Saida import Saida
 from Simulador import Simulador
+import threading
+import time
 
 class MotorDeSimulacao(Simulador):
     def __init__(self):
@@ -100,59 +102,64 @@ class MotorDeSimulacao(Simulador):
             print("ERRO DE EXECUÇÃO: O Ambiente não foi inicializado corretamente. Verifique os ficheiros de mapa.")
             return
 
-        posicoes_iniciais = {a: Posicao(a.posicao.x, a.posicao.y) for a in self.agentes}
+        num_participantes = len(self.agentes) + 1
+        barreira = threading.Barrier(num_participantes)
+
+        # Configurar Agentes para Threads
+        posicoes_iniciais = {}
+        for a in self.agentes:
+            posicoes_iniciais[a] = Posicao(a.posicao.x, a.posicao.y)
+            # Injetar dependências para o agente funcionar sozinho
+            if hasattr(a, 'set_sincronizacao'):
+                a.set_sincronizacao(self.ambiente, barreira)
+            # Definir como Daemon (para fecharem se o programa principal fechar)
+            a.daemon = True
 
         historico_global = []
+        num_eps = 350
 
-        num_eps = 600
-
-        if self.agentes and self.agentes[0].politica.nome == "Política Fixa":
+        if self.agentes and self.agentes[0].politica and self.agentes[0].politica.nome == "Política Fixa":
             num_eps = 1
+
+        for a in self.agentes:
+            if not a.is_alive():
+                a.start()
 
         # ciclo de episódios
         for ep in range(1, num_eps + 1):
             print(f"Inicio do episódio: {ep}" )
             self.passo_atual = 0
             ganhou = False
+            if self.ambiente:
+                self.ambiente.rasto.clear()
 
             for a in self.agentes:
                 p_ini = posicoes_iniciais[a]
-                a.posicao = Posicao(p_ini.x, p_ini.y)  # volta ao início
+                a.posicao = Posicao(p_ini.x, p_ini.y)
+
+                # Reset da memória de mensagens
+                if hasattr(a, 'mensagens_recebidas'):
+                    a.mensagens_recebidas = []
+
+                # Reset do histórico de posições
                 if hasattr(a, 'historico_recente'):
                     a.historico_recente = []
+
                 a.recompensa_acumulada = 0.0
 
             while not ganhou and self.passo_atual < self.max_passos:
                 self.passo_atual += 1
-                acoes_e_observacoes: Dict[Agente, Tuple[Accao, Any]] = {}
+
+                try:
+                    barreira.wait()
+                except threading.BrokenBarrierError:
+                    print("Erro de sincronização: Barreira quebrada.")
+                    break
 
                 self.ambiente.atualizacao()
 
-                for a in self.agentes:
-                    obs = self.ambiente.observacaoPara(a) # ambiente cria observação para agente
-                    a.observacao(obs)
-                    acao = a.age()
-                    acoes_e_observacoes[a] = (acao, obs)
-
-                for a, (acao, obs_anterior) in acoes_e_observacoes.items():
-                    recompensa_ext = self.ambiente.agir(acao, a) # executar ação
-                    obs_nova = self.ambiente.observacaoPara(a) # nova observação
-
-                    # faz a soma
-                    if hasattr(a, 'processar_recompensa'):
-                        recompensa_total = a.processar_recompensa(recompensa_ext, obs_nova)
-                    else:
-                        recompensa_total = recompensa_ext
-
-                    if hasattr(a.politica, 'aprende'):
-                        a.politica.aprende(obs_anterior, acao, recompensa_total, obs_nova)
-
-                    a.avaliacaoEstadoAtual(recompensa_total)  # Acumular
-                    a.observacao(obs_nova) # atualizar a observação do agente
-
-                # atualizar a grelha
-                #print(self.ambiente)
-                time.sleep(self.tempo_espera)
+                if self.tempo_espera > 0:
+                    time.sleep(self.tempo_espera)
 
                 # verificar se ganhou
                 if self.se_ganhou() == True:
@@ -178,10 +185,19 @@ class MotorDeSimulacao(Simulador):
             self.exportar_relatorio(historico_global, "relatorio.csv")
 
         for a in self.agentes:
-            if hasattr(a.politica, 'guardar_politica'):
+            if hasattr(a, 'parar'):
+                a.parar()  # Sinaliza à thread para sair do loop
+
+            if a.politica and hasattr(a.politica, 'guardar_politica'):
                 nome_ficheiro = f"qtable_agente_{a.id}.txt"
                 a.politica.guardar_politica(nome_ficheiro)
                 print(f"Política do Agente {a.id} guardada em '{nome_ficheiro}'.")
+
+            # Libertar a barreira final para as threads terminarem
+        try:
+            barreira.reset()
+        except:
+            pass
 
     def se_ganhou(self):
         objetivo = None

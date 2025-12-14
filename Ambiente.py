@@ -1,5 +1,5 @@
 from Elemento import Elemento
-from typing import List, Set, Tuple
+from typing import List, Set, Tuple, Dict
 from Posicao import Posicao
 from Accao import Accao, TipoAccao
 from Agente import Agente
@@ -8,6 +8,7 @@ from Farol import Farol
 from Saida import Saida
 from SensorBussola import SensorBussola
 from SensorVisao import SensorVisao
+import threading
 
 class Ambiente:
     def __init__(self, largura: int, altura: int, elementos: List[Elemento]):
@@ -15,7 +16,8 @@ class Ambiente:
         self.altura = altura
         self.elementos = elementos
         self.posicoes_risco: List[Posicao] = []
-        self.rasto: Set[Tuple[int, int]] = set()
+        self.rasto: Dict[Tuple[int, int], str] = {}
+        self.lock = threading.RLock()
 
     def todos_elementos_posicao(self, pos: Posicao) -> List[Elemento]:
         elementosPosicao: List[Elemento] = []
@@ -25,71 +27,93 @@ class Ambiente:
         return elementosPosicao
 
     def agir(self, acao: Accao, agente: Agente) ->float:
-        recompensa = 0.0
+        with self.lock:
+            recompensa = 0.0
 
-        if acao.tipo == TipoAccao.MOVER:
-            recompensa -= 0.1 # penalidade por defeito
+            if acao.tipo == TipoAccao.MOVER:
+                recompensa -= 0.1 # penalidade por defeito
 
-            dx = acao.parametros.get('dx', 0)
-            dy = acao.parametros.get('dy', 0)
+                dx = acao.parametros.get('dx', 0)
+                dy = acao.parametros.get('dy', 0)
 
-            novo_x = dx + agente.posicao.x
-            novo_y = dy + agente.posicao.y
-            nova_pos = Posicao(novo_x, novo_y)
+                novo_x = dx + agente.posicao.x
+                novo_y = dy + agente.posicao.y
+                nova_pos = Posicao(novo_x, novo_y)
 
-            # verificar se não saí dos limites da grelha
-            if not (0 <= novo_x < self.largura and 0 <= novo_y < self.altura):
-                recompensa -= 1.0 # penalidade por movimento inválido
-                return recompensa
+                # verificar se não saí dos limites da grelha
+                if not (0 <= novo_x < self.largura and 0 <= novo_y < self.altura):
+                    recompensa -= 1.0 # penalidade por movimento inválido
+                    return recompensa
 
-            # verificar colisões
-            elementos_pos = self.todos_elementos_posicao(nova_pos)
+                # verificar colisões
+                elementos_pos = self.todos_elementos_posicao(nova_pos)
 
-            colisao = False
-            encontrou_objetivo = False
+                colisao = False
+                encontrou_objetivo = False
 
-            for elem in elementos_pos:
-                if elem == agente:
-                    continue
+                for elem in elementos_pos:
+                    if elem == agente:
+                        continue
 
-                # verificar se é sólido
-                if getattr(elem, 'solido', False):
-                    colisao = True
+                    # verificar se é sólido
+                    if getattr(elem, 'solido', False):
+                        colisao = True
 
-                # verificar se é farol
-                if isinstance(elem, Farol) or isinstance(elem, Saida):
-                    encontrou_objetivo = True
+                    # verificar se é farol
+                    if isinstance(elem, Farol) or isinstance(elem, Saida):
+                        encontrou_objetivo = True
 
-            if colisao:
-                recompensa -= 5.0 # penalidade por colisão
-            else:
-                self.rasto.add((agente.posicao.x, agente.posicao.y))
-                agente.posicao = nova_pos
+                if colisao:
+                    recompensa -= 5.0 # penalidade por colisão
+                else:
+                    simbolo_rasto = '.'
 
-                if encontrou_objetivo:
-                    recompensa += 100.0 # recompensa por atingir o objetivo
+                    if dx != 0:
+                        simbolo_rasto = '_'
 
-        return recompensa
+                    elif dy != 0:
+                        simbolo_rasto = '|'
+
+                    # Guardamos o rasto na posição ONDE ELE ESTAVA (antes de se mexer)
+                    self.rasto[(agente.posicao.x, agente.posicao.y)] = simbolo_rasto
+                    agente.posicao = nova_pos
+
+                    if encontrou_objetivo:
+                        recompensa += 100.0 # recompensa por atingir o objetivo
+
+            elif acao.tipo == TipoAccao.COMUNICAR:
+                mensagem = acao.parametros.get('msg', "")
+
+                recompensa -= 0.05 # penalização para evitar que esteja sempre a comunicar
+
+                # Entregar a mensagem a todos os outros agentes
+                for elem in self.elementos:
+                    if isinstance(elem, Agente) and elem.id != agente.id:
+                        elem.comunica(mensagem, agente)
+
+
+            return recompensa
 
     def observacaoPara(self, agente: Agente) -> Observacao:
-        dados_vetor = None
-        dados_vizinhanca = {}
+        with self.lock:
+            dados_vetor = None
+            dados_vizinhanca = {}
 
-        for sensor in agente.sensores:
-            # sensor do farol
-            if isinstance(sensor, SensorBussola):
-                dados_vetor = sensor.ler(self, agente)
+            for sensor in agente.sensores:
+                # sensor do farol
+                if isinstance(sensor, SensorBussola):
+                    dados_vetor = sensor.ler(self, agente)
 
-            # sensor do labirinto
-            if isinstance(sensor, SensorVisao):
-                dados_vizinhanca=sensor.ler(self, agente)
+                # sensor do labirinto
+                if isinstance(sensor, SensorVisao):
+                    dados_vizinhanca=sensor.ler(self, agente)
 
-        return Observacao(
-            posicao_agente=agente.posicao,
-            vetor_farol=dados_vetor,  # usado no Farol
-            vizinhanca=dados_vizinhanca,  # usado no Labirinto
-            posicoes_risco=self.posicoes_risco
-        )
+            return Observacao(
+                posicao_agente=agente.posicao,
+                vetor_farol=dados_vetor,  # usado no Farol
+                vizinhanca=dados_vizinhanca,  # usado no Labirinto
+                posicoes_risco=self.posicoes_risco
+            )
 
     def atualizacao(self):
         for elem in self.elementos:
@@ -100,9 +124,9 @@ class Ambiente:
         grelha = [[' ' for _ in range(self.largura)] for _ in range(self.altura)]
         agentes_para_desenhar = []
 
-        for (rx, ry) in self.rasto:
+        for (rx, ry), simbolo in self.rasto.items():
             if 0 <= rx < self.largura and 0 <= ry < self.altura:
-                grelha[ry][rx] = '.'
+                grelha[ry][rx] = simbolo
 
         for e in self.elementos:
             if isinstance(e, Agente):
