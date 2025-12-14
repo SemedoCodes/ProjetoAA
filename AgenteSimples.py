@@ -17,7 +17,8 @@ class AgenteSimples(Agente):
         self.celulas_visitadas_proprias: Set[Tuple[int, int]] = set()
         self.historico_recente: List[Tuple[int, int]] = []  # Para detetar loops
         self.distancia_anterior_farol = float('inf')
-
+        self.passos_sem_comunicar = 0  # NOVO: contador
+        self.passos_entre_comunicacoes = 20  # comunicar a cada 10 passos
         self.tipo_problema = " "
 
     @classmethod
@@ -68,12 +69,28 @@ class AgenteSimples(Agente):
         self.nome = f"Agente {id_agente}"
         self.posicao = posicao_inicial
 
+    # NOVO - meu código
+    def comunica(self, mensagem, de_agente):
+        if self.politica and hasattr(self.politica, 'fundir_q_table'):
+            self.politica.fundir_q_table(mensagem)
+
+
     def age(self) -> Accao:
         if self.ultima_observacao is None or self.politica is None:
             return Accao(TipoAccao.FAZER_NADA)
-        acao = self.politica.selecionar_acao(self.ultima_observacao)
-
-        return acao
+        
+        # Incrementa contador
+        self.passos_sem_comunicar += 1
+        
+        # Comunicar a cada X passos (ex: 10)
+        if self.passos_sem_comunicar >= self.passos_entre_comunicacoes:
+            if hasattr(self.politica, 'construir_mensagem_qtable'):
+                msg_qtable = self.politica.construir_mensagem_qtable(limite=50)
+                self.passos_sem_comunicar = 0  # reset
+                return Accao.comunicar(msg_qtable)  # ← CORRETO!
+        
+        # Movimento normal
+        return self.politica.selecionar_acao(self.ultima_observacao)
 
     def processar_recompensa(self, recompensa_extrinseca: float, obs_nova: Observacao) -> float:
         recompensa_intrinseca = 0.0
