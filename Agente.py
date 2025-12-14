@@ -6,15 +6,14 @@ from Observacao import Observacao
 
 class Agente(Elemento, ABC):
 
-    def __init__ (self, id_agente: id, posicao: Posicao):
+    def __init__ (self, id_agente: int, posicao: Posicao):
         super().__init__(f"Agente {id_agente}", posicao, "A", True)
         self.id = id_agente
-
         self.recompensa_acumulada = 0.0
         self.sensores = []  # lista de sensores
         self.politica = None
         self.ultima_observacao = None
-        self.ativo = True
+        self.mensagens_recebidas = []
 
     def definir_politica(self, politica):
         self.politica = politica
@@ -40,4 +39,5 @@ class Agente(Elemento, ABC):
         self.sensores.append(sensor)
 
     def comunica(self, mensagem: str, de_agente: 'Agente'):
+        self.mensagens_recebidas.append(mensagem)
         print(f"[{self.nome}] Recebi: {mensagem}")

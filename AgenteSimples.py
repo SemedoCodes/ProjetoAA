@@ -13,7 +13,6 @@ class AgenteSimples(Agente):
 
     def __init__(self, id_agente: int, posicao: Posicao):
         super().__init__(id_agente, posicao)
-
         # recompensas intrínsecas
         self.celulas_visitadas_proprias: Set[Tuple[int, int]] = set()
         self.historico_recente: List[Tuple[int, int]] = []  # Para detetar loops
@@ -66,6 +65,7 @@ class AgenteSimples(Agente):
 
     def configura_ambiente(self, id_agente: int, posicao_inicial: Posicao):
         self.id = id_agente
+        self.nome = f"Agente {id_agente}"
         self.posicao = posicao_inicial
 
     def age(self) -> Accao:

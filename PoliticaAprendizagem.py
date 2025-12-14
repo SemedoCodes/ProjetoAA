@@ -32,12 +32,76 @@ class PoliticaAprendizagem(Politica):
         return self.q_table.get((estado, acao_str), 0.0)
 
     def selecionar_acao(self, obs: Observacao) -> Accao:
-        estado = self._get_estado(obs)
+        alvo_saida = None
+        becos_conhecidos = []
 
+        if hasattr(obs, 'mensagens') and obs.mensagens:
+            for msg in obs.mensagens:
+                partes = msg.split("|")
+                tipo = partes[0]
+                try:
+                    x = int(partes[1])
+                    y = int(partes[2])
+                    if tipo == "SAIDA":
+                        alvo_saida = (x, y)
+                    elif tipo == "BECO":
+                        becos_conhecidos.append((x, y))
+                except ValueError:
+                    continue
+
+        if alvo_saida:
+            tx, ty = alvo_saida
+            dx, dy = 0, 0
+            if tx > obs.posicao.x:
+                dx = 1
+            elif tx < obs.posicao.x:
+                dx = -1
+            elif ty > obs.posicao.y:
+                dy = 1
+            elif ty < obs.posicao.y:
+                dy = -1
+            return Accao.mover(dx, dy)
+
+        direcoes_mapa = {
+            "Norte": (0, -1), "Sul": (0, 1),
+            "Este": (1, 0), "Oeste": (-1, 0)
+        }
+
+        for direcao, (dx, dy) in direcoes_mapa.items():
+            if obs.ver_direcao(direcao) == "Saida":
+                saida_x = obs.posicao.x + dx
+                saida_y = obs.posicao.y + dy
+                if random.random() < 0.2:
+                    return Accao.comunicar(f"SAIDA|{saida_x}|{saida_y}")
+                else:
+                    return Accao.mover(dx, dy)
+
+        paredes = 0
+        for d in direcoes_mapa:
+            coisa = obs.ver_direcao(d)
+            if coisa == "Parede" or coisa == "Obstaculo":
+                paredes += 1
+
+        if paredes >= 3:
+            if random.random() < 0.1:
+                return Accao.comunicar(f"BECO|{obs.posicao.x}|{obs.posicao.y}")
+
+        estado = self._get_estado(obs)
         # explorar (Escolher aleatoriamente)
         if random.random() < self.epsilon:
-            dx, dy, _ = random.choice(self.acoes_possiveis)
-            return Accao.mover(dx, dy)
+            candidatas = []
+            for dx, dy, _ in self.acoes_possiveis:
+                prox_x = obs.posicao.x + dx
+                prox_y = obs.posicao.y + dy
+                if (prox_x, prox_y) not in becos_conhecidos:
+                    candidatas.append((dx, dy))
+
+                if not candidatas:
+                    dx, dy, _ = random.choice(self.acoes_possiveis)
+                else:
+                    dx, dy = random.choice(candidatas)
+
+                return Accao.mover(dx, dy)
 
         # aproveitar (Escolher a melhor ação da Q-Table)
         melhor_q = -float('inf') # ajuda a guardar a melhor acao possivel

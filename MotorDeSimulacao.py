@@ -104,7 +104,7 @@ class MotorDeSimulacao(Simulador):
 
         historico_global = []
 
-        num_eps = 100
+        num_eps = 350
 
         if self.agentes and self.agentes[0].politica.nome == "Política Fixa":
             num_eps = 1

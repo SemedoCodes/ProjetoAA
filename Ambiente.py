@@ -78,6 +78,17 @@ class Ambiente:
                 if encontrou_objetivo:
                     recompensa += 100.0 # recompensa por atingir o objetivo
 
+        elif acao.tipo == TipoAccao.COMUNICAR:
+            mensagem = acao.parametros.get('msg', "")
+
+            recompensa -= 0.05 # penalização para evitar que esteja sempre a comunicar
+
+            # Entregar a mensagem a todos os outros agentes
+            for elem in self.elementos:
+                if isinstance(elem, Agente) and elem.id != agente.id:
+                    elem.comunica(mensagem, agente)
+
+
         return recompensa
 
     def observacaoPara(self, agente: Agente) -> Observacao:
