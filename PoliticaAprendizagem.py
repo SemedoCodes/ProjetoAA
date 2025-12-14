@@ -1,7 +1,6 @@
 import random
-import json
 from Politica import Politica
-from Accao import Accao, TipoAccao
+from Accao import Accao
 from Observacao import Observacao
 
 class PoliticaAprendizagem(Politica):
@@ -52,15 +51,28 @@ class PoliticaAprendizagem(Politica):
         if alvo_saida:
             tx, ty = alvo_saida
             dx, dy = 0, 0
-            if tx > obs.posicao.x:
-                dx = 1
-            elif tx < obs.posicao.x:
-                dx = -1
-            elif ty > obs.posicao.y:
-                dy = 1
-            elif ty < obs.posicao.y:
-                dy = -1
-            return Accao.mover(dx, dy)
+            direcao_tentativa = None
+            dist_x = abs(tx - obs.posicao.x)
+            dist_y = abs(ty - obs.posicao.y)
+            if dist_x > 0 and (dist_x >= dist_y or dist_y == 0):
+                if tx > obs.posicao.x:
+                    dx, dy, direcao_tentativa = 1, 0, "Este"
+                else:
+                    dx, dy, direcao_tentativa = -1, 0, "Oeste"
+
+                if obs.ver_direcao(direcao_tentativa) in ["Parede", "Obstaculo"]:
+                    direcao_tentativa = None  # Bloqueado
+
+                if not direcao_tentativa and dist_y > 0:
+                    if ty > obs.posicao.y:
+                        dx, dy, direcao_tentativa = 0, 1, "Sul"
+                    else:
+                        dx, dy, direcao_tentativa = 0, -1, "Norte"
+
+                if direcao_tentativa:
+                    o_que_vejo = obs.ver_direcao(direcao_tentativa)
+                    if o_que_vejo != "Parede" and o_que_vejo != "Obstaculo":
+                        return Accao.mover(dx, dy)
 
         direcoes_mapa = {
             "Norte": (0, -1), "Sul": (0, 1),
