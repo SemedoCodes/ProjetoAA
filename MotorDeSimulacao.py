@@ -130,6 +130,8 @@ class MotorDeSimulacao(Simulador):
             print(f"Inicio do episódio: {ep}" )
             self.passo_atual = 0
             ganhou = False
+            if self.ambiente:
+                self.ambiente.rasto.clear()
 
             for a in self.agentes:
                 p_ini = posicoes_iniciais[a]

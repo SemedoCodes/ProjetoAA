@@ -8,6 +8,7 @@ class Agente(Elemento, threading.Thread, ABC):
 
     def __init__ (self, id_agente: int, posicao: Posicao):
         super().__init__(f"Agente {id_agente}", posicao, "A", True)
+        threading.Thread.__init__(self)
         self.id = id_agente
         self.recompensa_acumulada = 0.0
         self.sensores = []  # lista de sensores

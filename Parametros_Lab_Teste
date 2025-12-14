@@ -1,5 +1,5 @@
 tipo_problema=Labirinto
 tipo_politica=PoliticaFixa
-mapa_ficheiro=Labirinto_1
+mapa_ficheiro=Labirinto_3
 max_passos=500
-ficheiro_teste=qtable_agente_1.txt
+ficheiro_teste=qtable_agente_2.txt
