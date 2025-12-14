@@ -4,7 +4,9 @@ from Politica import Politica
 from Accao import Accao, TipoAccao
 from Observacao import Observacao
 
+
 class PoliticaAprendizagem(Politica):
+
 
     def __init__(self, alpha=0.1, gamma=0.9, epsilon=0.1):
         self.q_table = {}
@@ -25,83 +27,28 @@ class PoliticaAprendizagem(Politica):
             (-1, 0, "Oeste")
         ]
 
+
     def _get_estado(self, obs: Observacao):
         return (obs.posicao.x, obs.posicao.y)
+
 
     def _get_q(self, estado, acao_str):
         return self.q_table.get((estado, acao_str), 0.0)
 
-    def selecionar_acao(self, obs: Observacao) -> Accao:
-        alvo_saida = None
-        becos_conhecidos = []
 
+    def selecionar_acao(self, obs: Observacao) -> Accao:
+        # 1) Fundir Q-Tables recebidas de outros agentes (apenas QTABLE)
         if hasattr(obs, 'mensagens') and obs.mensagens:
             for msg in obs.mensagens:
-                partes = msg.split("|")
-                tipo = partes[0]
-                try:
-                    x = int(partes[1])
-                    y = int(partes[2])
-                    if tipo == "SAIDA":
-                        alvo_saida = (x, y)
-                    elif tipo == "BECO":
-                        becos_conhecidos.append((x, y))
-                except ValueError:
-                    continue
-
-        if alvo_saida:
-            tx, ty = alvo_saida
-            dx, dy = 0, 0
-            if tx > obs.posicao.x:
-                dx = 1
-            elif tx < obs.posicao.x:
-                dx = -1
-            elif ty > obs.posicao.y:
-                dy = 1
-            elif ty < obs.posicao.y:
-                dy = -1
-            return Accao.mover(dx, dy)
-
-        direcoes_mapa = {
-            "Norte": (0, -1), "Sul": (0, 1),
-            "Este": (1, 0), "Oeste": (-1, 0)
-        }
-
-        for direcao, (dx, dy) in direcoes_mapa.items():
-            if obs.ver_direcao(direcao) == "Saida":
-                saida_x = obs.posicao.x + dx
-                saida_y = obs.posicao.y + dy
-                if random.random() < 0.2:
-                    return Accao.comunicar(f"SAIDA|{saida_x}|{saida_y}")
-                else:
-                    return Accao.mover(dx, dy)
-
-        paredes = 0
-        for d in direcoes_mapa:
-            coisa = obs.ver_direcao(d)
-            if coisa == "Parede" or coisa == "Obstaculo":
-                paredes += 1
-
-        if paredes >= 3:
-            if random.random() < 0.1:
-                return Accao.comunicar(f"BECO|{obs.posicao.x}|{obs.posicao.y}")
+                if isinstance(msg, dict) and msg.get("tipo") == "QTABLE":
+                    self.fundir_q_table(msg)
 
         estado = self._get_estado(obs)
+        
         # explorar (Escolher aleatoriamente)
         if random.random() < self.epsilon:
-            candidatas = []
-            for dx, dy, _ in self.acoes_possiveis:
-                prox_x = obs.posicao.x + dx
-                prox_y = obs.posicao.y + dy
-                if (prox_x, prox_y) not in becos_conhecidos:
-                    candidatas.append((dx, dy))
-
-                if not candidatas:
-                    dx, dy, _ = random.choice(self.acoes_possiveis)
-                else:
-                    dx, dy = random.choice(candidatas)
-
-                return Accao.mover(dx, dy)
+            dx, dy, _ = random.choice(self.acoes_possiveis)
+            return Accao.mover(dx, dy)
 
         # aproveitar (Escolher a melhor ação da Q-Table)
         melhor_q = -float('inf') # ajuda a guardar a melhor acao possivel
@@ -120,9 +67,13 @@ class PoliticaAprendizagem(Politica):
         dx, dy = random.choice(melhores_acoes)
         return Accao.mover(dx, dy)
 
+
     def aprende(self, obs_anterior: Observacao, acao: Accao, recompensa: float, obs_nova: Observacao):
-        # Q(s,a) = Q(s,a) + alpha * [r + gamma * max(Q(s', a')) - Q(s,a)]
-        # identificar Estado (s) e Ação (a)
+        """
+        equação de Bellman.
+        Q(s,a) = Q(s,a) + alpha * [r + gamma * max(Q(s', a')) - Q(s,a)]
+        """
+        # 1. identificar Estado (s) e Ação (a)
         estado_ant = self._get_estado(obs_anterior)
 
         dx = acao.parametros.get('dx', 0)
@@ -140,10 +91,10 @@ class PoliticaAprendizagem(Politica):
         if acao_str == "Nulo":
             return
 
-        # identificar novo Estado (s')
+        # 2. identificar novo Estado (s')
         estado_novo = self._get_estado(obs_nova)
 
-        # calcular o max Q(s', a') (melhor valor futuro possível)
+        # 3. calcular o max Q(s', a') (melhor valor futuro possível)
         max_q_futuro = -float('inf')
         for _, _, nome_prox in self.acoes_possiveis:
             q_val = self._get_q(estado_novo, nome_prox)
@@ -153,7 +104,7 @@ class PoliticaAprendizagem(Politica):
         # e não houver valores na tabela para o prox estado, assume 0
         if max_q_futuro == -float('inf'): max_q_futuro = 0.0
 
-        # atualizar Q(s, a)
+        # 4. atualizar Q(s, a)
         q_atual = self._get_q(estado_ant, acao_str)
 
         # fórmula do Q-Learning
@@ -161,13 +112,49 @@ class PoliticaAprendizagem(Politica):
 
         self.q_table[(estado_ant, acao_str)] = novo_q
 
-    def guardar_politica(self, ficheiro: str):
 
-       #guarda a Q-Table num ficheiro txt
+    def guardar_politica(self, ficheiro: str):
+       #Guarda a Q-Table num ficheiro txt
        with open (ficheiro, "w") as f:
            for (estado, acao), q in self.q_table.items():
                x, y = estado
                f.write(f"{x},{y},{acao},{q}\n")
 
 
+    def construir_mensagem_qtable(self, limite: int = 200):
+        #Devolve um dict com parte da Q-Table.
+        #limite: nº máximo de entradas incluídas.
+        itens = list(self.q_table.items())
+        # opcional: ordena pelas ações mais valiosas
+        itens = sorted(itens, key=lambda kv: kv[1], reverse=True)[:limite]
+
+        dados = []
+        for (estado, acao_str), q in itens:
+            x, y = estado
+            dados.append({"x": x, "y": y, "acao": acao_str, "q": q})
+
+        return {"tipo": "QTABLE", "dados": dados}
     
+    def fundir_q_table(self, msg_qtable: dict, peso_externa: float = 0.5):
+        """
+        Atualiza Q-Table local com valores recebidos.
+        msg_qtable: dict {"tipo": "QTABLE", "dados": [ {x,y,acao,q}, ... ]}
+        peso_externa: peso dado ao conhecimento externo.
+        """
+        if not msg_qtable or msg_qtable.get("tipo") != "QTABLE":
+            return
+
+        for item in msg_qtable.get("dados", []):
+            try:
+                x = int(item["x"])
+                y = int(item["y"])
+                acao_str = str(item["acao"])
+                q_ext = float(item["q"])
+            except (KeyError, ValueError, TypeError):
+                continue
+
+            estado = (x, y)
+            q_local = self._get_q(estado, acao_str)
+            # mistura simples (média ponderada)
+            novo_q = (1 - peso_externa) * q_local + peso_externa * q_ext
+            self.q_table[(estado, acao_str)] = novo_q
