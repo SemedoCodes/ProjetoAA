@@ -155,6 +155,5 @@ class PoliticaAprendizagem(Politica):
 
             estado = (x, y)
             q_local = self._get_q(estado, acao_str)
-            # mistura simples (média ponderada)
-            novo_q = (1 - peso_externa) * q_local + peso_externa * q_ext
-            self.q_table[(estado, acao_str)] = novo_q
+            if q_ext > q_local:
+                self.q_table[(estado, acao_str)] = q_ext

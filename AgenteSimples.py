@@ -69,7 +69,6 @@ class AgenteSimples(Agente):
         self.nome = f"Agente {id_agente}"
         self.posicao = posicao_inicial
 
-    # NOVO - meu código
     def comunica(self, mensagem, de_agente):
         if self.politica and hasattr(self.politica, 'fundir_q_table'):
             self.politica.fundir_q_table(mensagem)
@@ -87,7 +86,7 @@ class AgenteSimples(Agente):
             if hasattr(self.politica, 'construir_mensagem_qtable'):
                 msg_qtable = self.politica.construir_mensagem_qtable(limite=50)
                 self.passos_sem_comunicar = 0  # reset
-                return Accao.comunicar(msg_qtable)  # ← CORRETO!
+                return Accao.comunicar(msg_qtable)
         
         # Movimento normal
         return self.politica.selecionar_acao(self.ultima_observacao)
