@@ -11,6 +11,7 @@ class PoliticaFixa(Politica):
     def __init__(self):
         self.regras_fixas = {}
         self.nome = "Política Fixa"
+        self.ultima_posicao = None
 
     def carregar_politica(self, ficheiro: str):
         # carrega a Q-Table de um ficheiro txt
@@ -35,7 +36,18 @@ class PoliticaFixa(Politica):
             return acao_teste
 
         if obs.tem_vetor():
+
+            colisao = False
+            if self.ultima_posicao is not None and self.ultima_posicao == estado_atual:
+                colisao = True
+
+            self.ultima_posicao = estado_atual
             dx_total, dy_total = obs.vetor_farol
+            if colisao:
+                dx = random.choice([-1, 0, 1])
+                dy = random.choice([-1, 0, 1])
+                if dx == 0 and dy == 0: dx = 1
+                return Accao.mover(dx, dy)
 
             # se ambos forem 0, estamos em cima do farol
             if dx_total == 0 and dy_total == 0:
