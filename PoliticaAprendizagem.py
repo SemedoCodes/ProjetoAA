@@ -18,7 +18,7 @@ class PoliticaAprendizagem(Politica):
 
         self.epsilon = epsilon # Taxa de exploração
         self.epsilon_min = epsilon_min
-        self.epsilon_decay = epsilon_decay # Redução a cada episódio
+        self.epsilon_decay = epsilon_decay # Fator de decaimento
 
         self.acoes_possiveis = [
             (0, -1, "Norte"),
