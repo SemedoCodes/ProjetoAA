@@ -31,7 +31,6 @@ class Ambiente:
             recompensa = 0.0
 
             if acao.tipo == TipoAccao.MOVER:
-                recompensa -= 0.1 # penalidade por defeito
 
                 dx = acao.parametros.get('dx', 0)
                 dy = acao.parametros.get('dy', 0)
@@ -42,7 +41,7 @@ class Ambiente:
 
                 # verificar se não saí dos limites da grelha
                 if not (0 <= novo_x < self.largura and 0 <= novo_y < self.altura):
-                    recompensa -= 1.0 # penalidade por movimento inválido
+                    recompensa -= 0.5 # penalidade por movimento inválido
                     return recompensa
 
                 # verificar colisões
@@ -64,7 +63,7 @@ class Ambiente:
                         encontrou_objetivo = True
 
                 if colisao:
-                    recompensa -= 5.0 # penalidade por colisão
+                    recompensa -= 10.0 # penalidade por colisão
                 else:
                     simbolo_rasto = '.'
 
@@ -84,13 +83,10 @@ class Ambiente:
             elif acao.tipo == TipoAccao.COMUNICAR:
                 mensagem = acao.parametros.get('msg', "")
 
-                recompensa -= 0.05 # penalização para evitar que esteja sempre a comunicar
-
                 # Entregar a mensagem a todos os outros agentes
                 for elem in self.elementos:
                     if isinstance(elem, Agente) and elem.id != agente.id:
                         elem.comunica(mensagem, agente)
-
 
             return recompensa
 
@@ -119,6 +115,10 @@ class Ambiente:
         for elem in self.elementos:
             if hasattr(elem, 'update'):
                 elem.update(self)
+
+    def fim_do_episodio(self):
+        if self.politica and hasattr(self.politica, 'atualizar_epsilon_fim_episodio'):
+            self.politica.atualizar_epsilon_fim_episodio()
 
     def __str__(self):
         grelha = [[' ' for _ in range(self.largura)] for _ in range(self.altura)]

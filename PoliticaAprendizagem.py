@@ -8,7 +8,7 @@ from Observacao import Observacao
 class PoliticaAprendizagem(Politica):
 
 
-    def __init__(self, alpha=0.1, gamma=0.9, epsilon=0.1):
+    def __init__(self, alpha=0.1, gamma=0.9, epsilon=1.0, epsilon_min=0.01, epsilon_decay=0.995):
         self.q_table = {}
         self.nome = "PolíticaAprendizagem"
 
@@ -19,6 +19,9 @@ class PoliticaAprendizagem(Politica):
         self.epsilon = epsilon # taxa de exploração: define a problabilidade de
         # o agente ignorar o que sabe e tentar algo aleatório para
         # descobrir novos caminhos
+
+        self.epsilon_min = epsilon_min
+        self.epsilon_decay = epsilon_decay # redução a cada passo
 
         self.acoes_possiveis = [
             (0, -1, "Norte"),
@@ -112,6 +115,9 @@ class PoliticaAprendizagem(Politica):
 
         self.q_table[(estado_ant, acao_str)] = novo_q
 
+    def atualizar_epsilon_fim_episodio(self):
+        if self.epsilon > self.epsilon_min:
+            self.epsilon *= self.epsilon_decay
 
     def guardar_politica(self, ficheiro: str):
        #Guarda a Q-Table num ficheiro txt

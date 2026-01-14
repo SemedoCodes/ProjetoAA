@@ -100,29 +100,13 @@ class AgenteSimples(Agente):
             dx, dy = obs_nova.vetor_farol
             distancia = abs(dx) + abs(dy)
 
-            if distancia < self.distancia_anterior_farol:
-                recompensa_intrinseca += 0.5 # recompensa por aproximar
-
             self.distancia_anterior_farol = distancia
 
-            if len(self.historico_recente) >= 2 and pos_atual == self.historico_recente[-2]:
-                recompensa_intrinseca -= 0.2 # penalidade por repetir os mesmos passos
 
         # labirinto
         elif self.tipo_problema == "Labirinto":
             if pos_atual not in self.celulas_visitadas_proprias:
-                recompensa_intrinseca += 1.0 # recompensa por visitar uma celula nova
                 self.celulas_visitadas_proprias.add(pos_atual)
-
-            paredes_a_volta = 0
-            for direcao in ["Norte", "Sul", "Este", "Oeste"]:
-                obs_ver = obs_nova.ver_direcao(direcao)
-
-                if obs_ver == "Parede" or obs_ver == "Obstaculo":
-                    paredes_a_volta += 1
-
-            if paredes_a_volta >= 3:
-                recompensa_intrinseca -= 0.2 # recompensa por dead-end
 
 
         # atualiza histórico
@@ -130,3 +114,7 @@ class AgenteSimples(Agente):
         if len(self.historico_recente) > 10: self.historico_recente.pop(0)
 
         return recompensa_extrinseca + recompensa_intrinseca
+
+    def fim_do_episodio(self):
+        if self.politica and hasattr(self.politica, 'atualizar_epsilon_fim_episodio'):
+            self.politica.atualizar_epsilon_fim_episodio()

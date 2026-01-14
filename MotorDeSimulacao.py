@@ -21,7 +21,7 @@ class MotorDeSimulacao(Simulador):
 
         self.passo_atual = 0
         self.max_passos = 100 # por defeito
-        self.tempo_espera = 0.5 # segundos entre passos
+        self.tempo_espera = 0.0 # segundos entre passos
 
     # cria e inicializa a instância da classe apartir do ficheiro de parametros
     @classmethod
@@ -157,21 +157,25 @@ class MotorDeSimulacao(Simulador):
                     break
 
                 self.ambiente.atualizacao()
-                print(self.ambiente)
+                # print(self.ambiente)
 
                 if self.tempo_espera > 0:
                     time.sleep(self.tempo_espera)
 
                 # verificar se ganhou
                 if self.se_ganhou() == True:
-                    #print(self.ambiente)
+                    print(self.ambiente)
                     ganhou = True
                     print("Ganhou!!")
                     print(f"Episódio {ep}: Ganhou em {self.passo_atual} passos.")
 
             if not ganhou:
-                #print(self.ambiente)
+                print(self.ambiente)
                 print(f"Episódio {ep}: perdeu - número máximo de passos atingidos.")
+
+            for a in self.agentes:
+                if hasattr(a, 'fim_do_episodio'):
+                    a.fim_do_episodio()
 
             # registo dos dados
             for a in self.agentes:
