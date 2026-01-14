@@ -1,11 +1,15 @@
 from enum import Enum
 
 class TipoAccao(Enum):
-    MOVER = "MOVER"         # Usada no Farol e Labirinto
-    COMUNICAR = "COMUNICAR" # Usada no Labirinto
-    FAZER_NADA = "NADA"     # Usada para esperar
+    MOVER = "MOVER"         # Deslocamento
+    COMUNICAR = "COMUNICAR" # Troca de mensagens (Q-Table)
+    FAZER_NADA = "NADA"     # Espera
 
 class Accao:
+    """
+    Encapsula uma decisão do agente.
+    Pode conter parâmetros como 'dx', 'dy' ou 'msg'.
+    """
     def __init__(self, tipo: TipoAccao, parametros: dict = None):
         self.tipo = tipo
         self.parametros = parametros if parametros is not None else {}

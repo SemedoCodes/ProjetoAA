@@ -2,6 +2,9 @@ from Sensor import Sensor
 from Farol import Farol
 
 class SensorBussola(Sensor):
+    """
+    Devolve o vetor (dx, dy) para o Farol, ignorando obstáculos.
+    """
     def __init__(self):
         super().__init__("Bússola")
 

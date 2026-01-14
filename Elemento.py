@@ -1,13 +1,16 @@
 from Posicao import Posicao
 
 class Elemento:
+    """
+    Classe base para todos os objetos na grelha (Paredes, Agentes, Farol, etc).
+    """
     def __init__(self, nome: str, posicao: Posicao, simbolo: str, solido: bool):
         self.nome = nome
         self.posicao = posicao
         self.simbolo = simbolo
-        self.solido = solido
+        self.solido = solido # se true, causa colisão
 
-    # elementos móveis vão reescrever este método
+    # Método para elementos dinâmicos
     def update(self, ambiente):
         pass
 

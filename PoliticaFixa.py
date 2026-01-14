@@ -1,15 +1,14 @@
 from Politica import Politica
-from Observacao import Observacao
 from Accao import Accao, TipoAccao
-from typing import Dict, Any, Tuple
+from typing import Tuple
 import random
 
 class PoliticaFixa(Politica):
-    # política de agente com regras fixas/determinísticas.
-    # usado para o Modo de Teste ou agentes que não aprendem.
+    """
+    Política determinística para testes.
+    """
 
     def __init__(self):
-        self.regras_fixas = {}
         self.nome = "Política Fixa"
         self.ultima_posicao = None
 
@@ -31,52 +30,47 @@ class PoliticaFixa(Politica):
 
     def selecionar_acao(self, obs) -> Accao:
         estado_atual = (obs.posicao.x, obs.posicao.y)
+
+        # Tenta ler do ficheiro
         acao_teste = self.selecionar_acao_ficheiro(estado_atual)
-        if acao_teste:
-            return acao_teste
+        if acao_teste: return acao_teste
 
+        # Lógica do Farol
         if obs.tem_vetor():
-
-            colisao = False
-            if self.ultima_posicao is not None and self.ultima_posicao == estado_atual:
-                colisao = True
-
+            # Deteta colisão
+            colisao = (self.ultima_posicao is not None and self.ultima_posicao == estado_atual)
             self.ultima_posicao = estado_atual
-            dx_total, dy_total = obs.vetor_farol
+
+            # Se bateu, faz movimenro aleatório
             if colisao:
-                dx = random.choice([-1, 0, 1])
-                dy = random.choice([-1, 0, 1])
-                if dx == 0 and dy == 0: dx = 1
+                opcoes = [(0, 1), (0, -1), (1, 0), (-1, 0), (1, 1)]
+                dx, dy = random.choice(opcoes)
                 return Accao.mover(dx, dy)
 
-            # se ambos forem 0, estamos em cima do farol
+            dx_total, dy_total = obs.vetor_farol
+
+            # Atingiu o objetivo
             if dx_total == 0 and dy_total == 0:
                 return Accao(TipoAccao.FAZER_NADA)
 
-            # se a distância horizontal for maior ou igual à vertical -> move em X
+            # Reduzir a maior distância
             if abs(dx_total) >= abs(dy_total):
-                if dx_total > 0:
-                    return Accao.mover(1, 0)  # Mover Este
-                else:
-                    return Accao.mover(-1, 0)  # Mover Oeste
-
-            # mover em Y
+                return Accao.mover(1 if dx_total > 0 else -1, 0)
             else:
-                if dy_total > 0:
-                    return Accao.mover(0, 1)  # Mover Sul
-                else:
-                    return Accao.mover(0, -1)  # Mover Norte
+                return Accao.mover(0, 1 if dy_total > 0 else -1)
+
+        # Lógica do Labirinto
         else:
             possiveis = []
-            if obs.ver_direcao("Norte") == "Saida": return Accao.mover(0, -1)
-            if obs.ver_direcao("Sul") == "Saida":   return Accao.mover(0, 1)
-            if obs.ver_direcao("Este") == "Saida":  return Accao.mover(1, 0)
-            if obs.ver_direcao("Oeste") == "Saida": return Accao.mover(-1, 0)
+            mapa = [("Norte", 0, -1), ("Sul", 0, 1), ("Este", 1, 0), ("Oeste", -1, 0)]
 
-            if obs.ver_direcao("Norte") == "Vazio": possiveis.append((0, -1))
-            if obs.ver_direcao("Sul") == "Vazio":   possiveis.append((0, 1))
-            if obs.ver_direcao("Este") == "Vazio":  possiveis.append((1, 0))
-            if obs.ver_direcao("Oeste") == "Vazio": possiveis.append((-1, 0))
+            # Pioridade -> Saída
+            for d_nome, dx, dy in mapa:
+                if obs.ver_direcao(d_nome) == "Saida": return Accao.mover(dx, dy)
+
+            # Movimento Aleatório nas células vazias
+            for d_nome, dx, dy in mapa:
+                if obs.ver_direcao(d_nome) == "Vazio": possiveis.append((dx, dy))
 
             if possiveis:
                 dx, dy = random.choice(possiveis)
@@ -84,26 +78,20 @@ class PoliticaFixa(Politica):
 
             return Accao(TipoAccao.FAZER_NADA)
 
+    # Usa Q-Table pré-carregada se existir
     def selecionar_acao_ficheiro(self, estado: Tuple[int, int]) -> Accao:
-        if not hasattr(self, 'q_table'):
-            return None
-        acoes_possiveis = [
-            (0, -1, "Norte"), (0, 1, "Sul"), (1, 0, "Este"), (-1, 0, "Oeste")
-        ]
+        if not hasattr(self, 'q_table'): return None
 
+        acoes_possiveis = [(0, -1, "Norte"), (0, 1, "Sul"), (1, 0, "Este"), (-1, 0, "Oeste")]
         melhor_q = -float('inf')
         melhor_acao = None
 
-        encontrou_alguma = False
-
         for dx, dy, nome in acoes_possiveis:
-            if (estado, nome) in self.q_table:
-                encontrou_alguma = True
-                q_val = self.q_table[(estado, nome)]
-                if q_val > melhor_q:
-                    melhor_q = q_val
-                    melhor_acao = (dx, dy)
+            val = self.q_table.get((estado, nome))
+            if val is not None and val > melhor_q:
+                melhor_q = val
+                melhor_acao = (dx, dy)
 
-        if encontrou_alguma and melhor_acao:
-            return Accao.mover(melhor_acao[0], melhor_acao[1])
+        if melhor_acao:
+            return Accao.mover(*melhor_acao)
         return None

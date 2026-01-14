@@ -1,9 +1,11 @@
 class Posicao:
+    """
+    Representa uma coordenada (x,y) na grelha
+    """
     def __init__(self, x, y):
         self.x = x
         self.y = y
 
-    # Comparar duas posições
     def __eq__(self, p):
         if isinstance(p, Posicao):
             return self.x == p.x and self.y == p.y

@@ -1,5 +1,5 @@
 from Elemento import Elemento
-from typing import List, Set, Tuple, Dict
+from typing import List, Tuple, Dict
 from Posicao import Posicao
 from Accao import Accao, TipoAccao
 from Agente import Agente
@@ -11,6 +11,10 @@ from SensorVisao import SensorVisao
 import threading
 
 class Ambiente:
+    """
+    Representa o mundo físico da simulação.
+    Gere colisões, movimentos e validação de regras.
+    """
     def __init__(self, largura: int, altura: int, elementos: List[Elemento]):
         self.largura = largura
         self.altura = altura
@@ -22,31 +26,30 @@ class Ambiente:
     def todos_elementos_posicao(self, pos: Posicao) -> List[Elemento]:
         elementosPosicao: List[Elemento] = []
         for e in self.elementos:
-            if e.posicao == pos:
-                elementosPosicao.append(e)
+            if e.posicao == pos: elementosPosicao.append(e)
         return elementosPosicao
 
+    # Executa uma ação no mundo e devolve a recompensa (extrínseca)
     def agir(self, acao: Accao, agente: Agente) ->float:
         with self.lock:
             recompensa = 0.0
 
             if acao.tipo == TipoAccao.MOVER:
-
                 dx = acao.parametros.get('dx', 0)
                 dy = acao.parametros.get('dy', 0)
 
+                # Calcular nova potencial posição
                 novo_x = dx + agente.posicao.x
                 novo_y = dy + agente.posicao.y
                 nova_pos = Posicao(novo_x, novo_y)
 
-                # verificar se não saí dos limites da grelha
+                # Verificar limites do mapa
                 if not (0 <= novo_x < self.largura and 0 <= novo_y < self.altura):
                     recompensa -= 0.5 # penalidade por movimento inválido
                     return recompensa
 
-                # verificar colisões
+                # Verificar colisões
                 elementos_pos = self.todos_elementos_posicao(nova_pos)
-
                 colisao = False
                 encontrou_objetivo = False
 
@@ -54,27 +57,19 @@ class Ambiente:
                     if elem == agente:
                         continue
 
-                    # verificar se é sólido
                     if getattr(elem, 'solido', False):
                         colisao = True
 
-                    # verificar se é farol
                     if isinstance(elem, Farol) or isinstance(elem, Saida):
                         encontrou_objetivo = True
 
                 if colisao:
                     recompensa -= 10.0 # penalidade por colisão
                 else:
-                    simbolo_rasto = '.'
+                    # Atualizar rasto visual
+                    simbolo = '_' if dx != 0 else '|'
+                    self.rasto[(agente.posicao.x, agente.posicao.y)] = simbolo
 
-                    if dx != 0:
-                        simbolo_rasto = '_'
-
-                    elif dy != 0:
-                        simbolo_rasto = '|'
-
-                    # Guardamos o rasto na posição ONDE ELE ESTAVA (antes de se mexer)
-                    self.rasto[(agente.posicao.x, agente.posicao.y)] = simbolo_rasto
                     agente.posicao = nova_pos
 
                     if encontrou_objetivo:
@@ -90,17 +85,15 @@ class Ambiente:
 
             return recompensa
 
+    # Gera a observação baseada nos sensores instalados no agente
     def observacaoPara(self, agente: Agente) -> Observacao:
         with self.lock:
             dados_vetor = None
             dados_vizinhanca = {}
 
             for sensor in agente.sensores:
-                # sensor do farol
                 if isinstance(sensor, SensorBussola):
                     dados_vetor = sensor.ler(self, agente)
-
-                # sensor do labirinto
                 if isinstance(sensor, SensorVisao):
                     dados_vizinhanca=sensor.ler(self, agente)
 
@@ -111,15 +104,13 @@ class Ambiente:
                 posicoes_risco=self.posicoes_risco
             )
 
+    # Atualiza os elementos dinâmicos
     def atualizacao(self):
         for elem in self.elementos:
             if hasattr(elem, 'update'):
                 elem.update(self)
 
-    def fim_do_episodio(self):
-        if self.politica and hasattr(self.politica, 'atualizar_epsilon_fim_episodio'):
-            self.politica.atualizar_epsilon_fim_episodio()
-
+    # Desenha a grelha
     def __str__(self):
         grelha = [[' ' for _ in range(self.largura)] for _ in range(self.altura)]
         agentes_para_desenhar = []
